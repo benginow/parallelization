@@ -1,3 +1,11 @@
+Special Info:
+    - r0 is special:
+        * reading from r0 always returns 0
+        * writing to r0 interprets the the least significant
+            8 bits as an ASCII code and prints that character
+    - rF is special:
+        * written to by mul and div, can change without explicit reference
+
 encoding          instruction       description
 
 0000aaaabbbbtttt  add rt,ra,rb      regs[t] = regs[a] + regs[b]
