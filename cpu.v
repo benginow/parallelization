@@ -192,6 +192,13 @@ module main();
 
     wire d_isLd = d_isMem && d_subcode == 0;
     wire d_isSt = d_isMem && d_subcode == 1;
+
+    wire d_isVld = d_opcode == 4'b1110;
+    wire d_isVadd = d_opcode == 4'b1000;
+    wire d_isVsub = d_opcode == 4'b1001;
+    //just multiply each element
+    wire d_isVmul = d_opcode == 4'b1010;
+    wire d_isVdiv = d_opcode == 4'b
     
     //prep reg reading for execute
     wire [3:0]d_ra = d_ins[11:8];
