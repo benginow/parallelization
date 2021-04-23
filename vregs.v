@@ -9,10 +9,11 @@
     - 1 write port allows writing one entry of a vector register
 */
 
+
 module vregs(input clk,
     input [3:0]rAddr0, output [255:0]rData0, output rLen0,
     input [3:0]rAddr1, output [255:0]rData1, output rLen1,
-    input [3:0]rAddr2, input [3:0]rInd2, output [15:0]rData2, 
+    //input [3:0]rAddr2, input [3:0]rInd2, output [15:0]rData2, 
     input wEn, input [3:0]wAddr, input [3:0]wInd, input[15:0]wData);
 
 
