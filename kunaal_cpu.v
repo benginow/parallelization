@@ -42,86 +42,107 @@ module main();
 
     wire counter = 0;
 
-    wire mem_bank_0_wen = () && 
+    wire mem_bank_0_wen;
     mem_bank0 mem(clk,
          memRAddr0[15:1], memData0,
          memRAddr1[15:1], memData1,
-         memWEn, memWAddr[15:1], memWData);
+         mem_bank_0_wen, memWAddr[15:1], memWData);
 
+    wire mem_bank_1_wen;
     mem_bank1 mem(clk,
          memRAddr0[15:1], memData0,
          memRAddr1[15:1], memData1,
-         memWEn, memWAddr[15:1], memWData);
+         mem_bank_1_wen, memWAddr[15:1], memWData);
 
+    wire mem_bank_2_wen;
     mem_bank2 mem(clk,
          memRAddr0[15:1], memData0,
          memRAddr1[15:1], memData1,
-         memWEn, memWAddr[15:1], memWData);
+         mem_bank_2_wen, memWAddr[15:1], memWData);
 
+    wire mem_bank_3_wen;
+    mem_bank3 mem(clk,
+         memRAddr0[15:1], memData0,
+         memRAddr1[15:1], memData1,
+         mem_bank_3_wen, memWAddr[15:1], memWData);
+
+    wire mem_bank_4_wen;
     mem_bank4 mem(clk,
          memRAddr0[15:1], memData0,
          memRAddr1[15:1], memData1,
-         memWEn, memWAddr[15:1], memWData);
+         mem_bank_4_wen, memWAddr[15:1], memWData);
 
+    wire mem_bank_5_wen;
     mem_bank5 mem(clk,
          memRAddr0[15:1], memData0,
          memRAddr1[15:1], memData1,
-         memWEn, memWAddr[15:1], memWData);
+         mem_bank_5_wen, memWAddr[15:1], memWData);
 
+    wire mem_bank_6_wen;
     mem_bank6 mem(clk,
          memRAddr0[15:1], memData0,
          memRAddr1[15:1], memData1,
-         memWEn, memWAddr[15:1], memWData);
+         mem_bank_6_wen, memWAddr[15:1], memWData);
 
+    wire mem_bank_7_wen;
     mem_bank7 mem(clk,
          memRAddr0[15:1], memData0,
          memRAddr1[15:1], memData1,
-         memWEn, memWAddr[15:1], memWData);
+         mem_bank_7_wen, memWAddr[15:1], memWData);
 
+    wire mem_bank_8_wen;
     mem_bank8 mem(clk,
          memRAddr0[15:1], memData0,
          memRAddr1[15:1], memData1,
-         memWEn, memWAddr[15:1], memWData);
+         mem_bank_8_wen, memWAddr[15:1], memWData);
 
+    wire mem_bank_9_wen;
     mem_bank9 mem(clk,
          memRAddr0[15:1], memData0,
          memRAddr1[15:1], memData1,
-         memWEn, memWAddr[15:1], memWData);
+         mem_bank_9_wen, memWAddr[15:1], memWData);
 
+    wire mem_bank_10_wen;
     mem_bank10 mem(clk,
          memRAddr0[15:1], memData0,
          memRAddr1[15:1], memData1,
-         memWEn, memWAddr[15:1], memWData);
+         mem_bank_10_wen, memWAddr[15:1], memWData);
 
+    wire mem_bank_11_wen;
     mem_bank11 mem(clk,
          memRAddr0[15:1], memData0,
          memRAddr1[15:1], memData1,
-         memWEn, memWAddr[15:1], memWData);
+         mem_bank_11_wen, memWAddr[15:1], memWData);
 
+    wire mem_bank_12_wen;
     mem_bank12 mem(clk,
          memRAddr0[15:1], memData0,
          memRAddr1[15:1], memData1,
-         memWEn, memWAddr[15:1], memWData);
+         mem_bank_12_wen, memWAddr[15:1], memWData);
 
+    wire mem_bank_13_wen;
     mem_bank13 mem(clk,
          memRAddr0[15:1], memData0,
          memRAddr1[15:1], memData1,
-         memWEn, memWAddr[15:1], memWData);
+         mem_bank_13_wen, memWAddr[15:1], memWData);
 
+    wire mem_bank_14_wen;
     mem_bank14 mem(clk,
          memRAddr0[15:1], memData0,
          memRAddr1[15:1], memData1,
-         memWEn, memWAddr[15:1], memWData);
+         mem_bank_14_wen, memWAddr[15:1], memWData);
 
+    wire mem_bank_15_wen;
     mem_bank15 mem(clk,
          memRAddr0[15:1], memData0,
          memRAddr1[15:1], memData1,
-         memWEn, memWAddr[15:1], memWData);
+         mem_bank_15_wen, memWAddr[15:1], memWData);
 
+    wire mem_bank_16_wen;
     mem_bank16 mem(clk,
          memRAddr0[15:1], memData0,
          memRAddr1[15:1], memData1,
-         memWEn, memWAddr[15:1], memWData);
+         mem_bank_16_wen, memWAddr[15:1], memWData);
     //control signals and structures
     //control precedence: halt > flush > stall
     wire haltSig;
