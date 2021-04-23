@@ -35,8 +35,85 @@ module main();
     wire [15:0] writeData;
 
 
-    // memory
-    mem mem(clk,
+    // memory banks
+    //we have 16 mem banks
+    //first memory bank reserved for instructions, then the rest reserved for memory
+    mem_bank0 mem(clk,  
+         pc[15:1], ins_F,
+         memRead, readOut,
+         writeMem, writeAddr, writeData);
+
+    mem_bank1 mem(clk,
+         pc[15:1], ins_F,
+         memRead, readOut,
+         writeMem, writeAddr, writeData);
+
+    mem_bank2 mem(clk,
+         pc[15:1], ins_F,
+         memRead, readOut,
+         writeMem, writeAddr, writeData);
+
+    mem_bank3 mem(clk,
+         pc[15:1], ins_F,
+         memRead, readOut,
+         writeMem, writeAddr, writeData);
+
+    mem_bank4 mem(clk,
+         pc[15:1], ins_F,
+         memRead, readOut,
+         writeMem, writeAddr, writeData);
+
+    mem_bank5 mem(clk,
+         pc[15:1], ins_F,
+         memRead, readOut,
+         writeMem, writeAddr, writeData);
+
+    mem_bank6 mem(clk,
+         pc[15:1], ins_F,
+         memRead, readOut,
+         writeMem, writeAddr, writeData);
+
+    mem_bank7 mem(clk,
+         pc[15:1], ins_F,
+         memRead, readOut,
+         writeMem, writeAddr, writeData);
+
+    mem_bank8 mem(clk,
+         pc[15:1], ins_F,
+         memRead, readOut,
+         writeMem, writeAddr, writeData);
+
+    mem_bank9 mem(clk,
+         pc[15:1], ins_F,
+         memRead, readOut,
+         writeMem, writeAddr, writeData);
+
+    mem_bank10 mem(clk,
+         pc[15:1], ins_F,
+         memRead, readOut,
+         writeMem, writeAddr, writeData);
+
+    mem_bank11 mem(clk,
+         pc[15:1], ins_F,
+         memRead, readOut,
+         writeMem, writeAddr, writeData);
+
+    mem_bank12 mem(clk,
+         pc[15:1], ins_F,
+         memRead, readOut,
+         writeMem, writeAddr, writeData);
+
+    mem_bank13 mem(clk,
+         pc[15:1], ins_F,
+         memRead, readOut,
+         writeMem, writeAddr, writeData);
+
+    mem_bank14 mem(clk,
+         pc[15:1], ins_F,
+         memRead, readOut,
+         writeMem, writeAddr, writeData);
+
+    mem_bank15 mem(clk,
          pc[15:1], ins_F,
          memRead, readOut,
          writeMem, writeAddr, writeData);
