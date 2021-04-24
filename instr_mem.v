@@ -13,7 +13,7 @@ module instr_mem(input clk,
     reg [15:1]raddr0;
     reg [15:0]rdata0;
 
-    assign rdata0_ = rdata0;
+    assign rdata0_ <= rdata0;
 
     always @(posedge clk) begin
         raddr0 <= raddr0_;
