@@ -12,8 +12,6 @@ module mem(input clk,
         $readmemh("mem.hex",data);
     end
 
-    
-
     reg [15:1]raddr0;
     reg [15:0]rdata0;
 
