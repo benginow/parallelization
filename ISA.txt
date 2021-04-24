@@ -30,8 +30,8 @@ encoding          instruction       description
 1011aaaabbbbtttt  vdiv vrt,vra,vrb  vregs[t] = vregs[a] / vregs[b]
 
 1100aaaaiiiitttt  vld vrt,vra,$imm  vregs[t] = mem[vregs[a]] : mem[vregs[a] + $imm + 1]
-1100aaaaiiiitttt  vst vrt,vra,$imm  mem[vregs[a]] : mem[vregs[a] + $imm + 1] = vregs[t]
+1101aaaaiiiitttt  vst vrt,vra,$imm  mem[vregs[a]] : mem[vregs[a] + $imm + 1] = vregs[t]
 
-1101aaaabbbbtttt  vdot rt,vra,vrb   regs[t] = vregs[a] DOTPRODUCT vregs[b]
+1110aaaabbbbtttt  vdot rt,vra,vrb   regs[t] = vregs[a] DOTPRODUCT vregs[b]
 
 1111????????????  HALT
