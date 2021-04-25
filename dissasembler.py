@@ -84,6 +84,8 @@ def main (file_name):
     open(file_name + ".hex","w")
     f = open(file_name + ".hex","a")
     for line in ins2write:
-        f.write(line + "\n")
+        encoded = hex(int(line,2))
+        encoded = encoded.replace("0x","")
+        f.write(encoded + "\n")
 
 main ("test1")
