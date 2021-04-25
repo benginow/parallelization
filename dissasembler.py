@@ -34,7 +34,7 @@ def main (file_name):
         ins = line[0]
         opcode = ins_opcode.get(ins)
         
-        if ins == "add" or ins == "sub" or ins == "mul" or ins == "div" or ins == "vadd" or ins == "vsub" or ins == "vmul" or ins == "vdiv" or ins == "vdot":
+        if ins == "add" or ins == "sub" or ins == "mul" or ins == "div":
             #add rt,ra,rb
             ra = int(line[2].replace("r",""))
             ra = "{0:04b}".format(ra)
@@ -46,15 +46,26 @@ def main (file_name):
             rt = "{0:04b}".format(rt)
 
             ins2binary = opcode + ra + rb + rt
+        elif ins == "vadd" or ins == "vsub" or ins == "vmul" or ins == "vdiv" or ins == "vdot":
+            ra = int(line[2].replace("vr",""))
+            ra = "{0:04b}".format(ra)
+
+            rb = int(line[3].replace("vr",""))
+            rb = "{0:04b}".format(rb)
+
+            rt = int(line[1].replace("vr",""))
+            rt = "{0:04b}".format(rt)
+
+            ins2binary = opcode + ra + rb + rt
         elif ins == "vld" or ins == "vst":
             #vld vrt,vra,$imm
-            ra = int(line[2].replace("r",""))
+            ra = int(line[2].replace("vr",""))
             ra = "{0:04b}".format(ra)
 
             i = int(line[3])
             i = "{0:04b}".format(i)
 
-            rt = int(line[1].replace("r",""))
+            rt = int(line[1].replace("vr",""))
             rt = "{0:04b}".format(rt)
             ins2binary = opcode + ra + i + rt
         elif ins == "movl" or ins == "movh":
