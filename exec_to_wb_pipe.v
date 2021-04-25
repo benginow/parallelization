@@ -14,9 +14,11 @@ module fetch_to_wb_pipe(input clk,
     input d_isScalarMem,
     input d_isDiv, input d_isVadd, input d_isVsub, input d_isVmul, input d_isVdiv,
     input d_stallCycle,
-    input d_ra, input d_rb, input d_rt, input d_rx,
-    input x_regData0, input x_regData1,
-    input x_vregData0, input x_vregData1,
+    input [3:0]d_ra, input [3:0]d_rb, input [3:0]d_rt, input [3:0]d_rx,
+    input d_regData0, input d_regData1,
+    input d_vregData0, input d_vregData1,
+    //these are wires
+    input [15:0]x_ra_val, input [15:0]x_rx_val,
     output x_stall, output flush,
     output x_read_mem_addr,
     output x_mem_WEn); //needs output from WB
@@ -173,6 +175,9 @@ module fetch_to_wb_pipe(input clk,
 
     reg x2_rx;
 
+    reg[15:0] x2_ra_val;
+    reg[15:0] x2_rx_val;
+
     reg x2_stallCycle;
     
     wire x2_stall;
@@ -222,9 +227,12 @@ module fetch_to_wb_pipe(input clk,
         x2_rt <= x_rt;
 
         x2_rx <= x_rx;
+
+        x2_ra_val <= x_ra_val;
+        x2_rx_val <= x_rx_val;
     end
 
-    //================================WRITEBACK===========================================
+    
 
     wire wb_valid = 0;
     reg [15:0]wb_pc;
@@ -264,16 +272,24 @@ module fetch_to_wb_pipe(input clk,
 
     reg wb_is_vector_op;
 
-    reg wb_ra;
-    reg wb_rb;
-    reg wb_rt;
+    reg[3:0] wb_ra;
+    reg[3:0] wb_rb;
+    reg[3:0] wb_rt;
 
-    reg wb_rx;
+    reg[3:0] wb_rx;
+
+    reg[15:0] wb_ra_val;
+    reg[15:0] wb_rx_val;
 
     reg wb_stallCycle;
     
     wire wb_stall;
     wire wb_stuck;
+
+    wire[15:0] result = (wb_isAdd || wb_isVadd) ? wb_ra_val + wb_rx_val :
+                        (wb_isSub || wb_isVsub) ? wb_rx_val - wb_ra_val :
+                        (wb_isDiv || wb_isVdiv) ? 1 :
+                        (wb_isMul || wb_isVmul) ? 1 : 1;
 
 
     always @(posedge clk) begin
@@ -326,6 +342,9 @@ module fetch_to_wb_pipe(input clk,
         wb_rt <= x2_rt;
 
         wb_rx <= x2_rx;
+
+        wb_ra_val <= x2_ra_val;
+        wb_rx_val <= x2_rx_val;
     end
 
 

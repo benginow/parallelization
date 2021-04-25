@@ -17,10 +17,10 @@ module main();
 
     //register file - 1 clock latency
     //reads ra
-    wire [3:0]regRAddr0;
+    wire [3:0]regRAddr0 = d_ra;
     wire [15:0]regData0;
     //reads rx
-    wire [3:0]regRAddr1;
+    wire [3:0]regRAddr1 = d_rx;
     wire [15:0]regData1;
     wire regWEn;
     wire [3:0]regWAddr;
@@ -30,9 +30,9 @@ module main();
         regRAddr1, regData1,
         regWEn, regWAddr, regWData);
 
-    wire [3:0]vregRAddr0;
+    wire [3:0]vregRAddr0 = d_ra;
     wire [255:0]vregData0;
-    wire [3:0]vregRAddr1;
+    wire [3:0]vregRAddr1 = d_rx;
     wire [255:0]vregData1;
     wire vregWEn;
     wire [3:0]vregWAddr;
@@ -231,15 +231,23 @@ module main();
     reg fr_ra;
     reg fr_rx;
 
-    reg[15:0] fr_ra_val;
-    reg[15:0] fr_rx_val;
+
+    wire[15:0] fr_ra_val = regData0;
+    wire[15:0] fr_rx_val = regData1;
+
+     //TODO: vregs size functionality
+     wire[2:0] fr_vra_size = vregData0_size;
+    wire[255:0] fr_vra_val = vregData0;
+    wire[2:0] fr_vrx_size = vregData1_size;
+    wire[255:0] fr_vrx_val = vregData1;
 
     always @(posedge clk) begin
+
          //here, we want to decide, if this is a vector op, how many cycles to stall for
-          fr_stall_cycles <= fr_stall_cycles_temp - 1;
+         fr_stall_cycles <= fr_stall_cycles_temp - 1;
 
          //percolate values
-          fr_valid <= d_valid;
+        fr_valid <= d_valid;
         fr_pc <= d_pc;
         fr_ins <= d_ins;
         fr_opcode <= d_opcode;
@@ -283,28 +291,82 @@ module main();
 
         fr_rx <= d_rx;
 
-        fr_ra_val <= d_ra_val;
         fr_rx_val <= d_rx_val;
+        fr_ra_val <= d_ra_val;
     end
 
      // we will have four pipelines
+     //always valid
+     wire[3:0] pipe_0_target_index = (stallCycle-1)*4;
+     wire[16:0] pipe_0_target = fr_is_vector_op ? fr_vra_val[pipe_0_target_index*16: (pipe_0_target_index+1)*16-1] : fr_va_val;
+     wire[16:0] pipe_0_output;
     exec_to_wb_pipe pipe_0(,,,,);
 
      //valid when it's a vector op and we want to continue doing the vector op
      //we need the vector length and then 
-    wire pipe_1_valid = fr_is_vector_op;
+     wire[3:0] pipe_1_target_index = (stallCycle-1)*4 + 1;
+     wire[16:0] pipe_1_target = fr_vra_val[pipe_1_target_index*16: (pipe_1_target_index+1)*16-1];
+    wire pipe_1_valid = fr_stall_signal;
+    wire[16:0] pipe_1_output;
     exec_to_wb_pipe pipe_1(,,,,);
 
-     wire pipe_2_valid = !fr_isScalarMem;
+     wire[3:0] pipe_2_target_index = (stallCycle-1)*4 + 2;  
+      wire[16:0] pipe_2_target_ra = fr_vra_val[pipe_2_target_index*16: (pipe_2_target_index+1)*16-1];
+     wire pipe_2_valid = fr_stall_signal;
+     wire[16:0] pipe_2_output;
     exec_to_wb_pipe pipe_2(,,,,);
 
-     wire pipe_3_valid = !fr_isScalarMem;
+     wire[3:0] pipe_3_target_index = (stallCycle-1)*4 + 3;
+     wire[16:0] pipe_3_target = fr_vra_val[pipe_3_target_index*16: (pipe_3_target_index+1)*16-1]
+     wire pipe_3_valid = r_stall_signal;
+     wire[16:0] pipe_3_output;
     exec_to_wb_pipe pipe_3(,,,,);
 
+     //we need to keep updting the vector output
+     //wire [255:0]fr_vector_output;
+
+    //================================COALESCE============================================
+     reg [255:0] c_new_vector;
+     reg [15:0] c_scalar_output;
+     wire[3:0] pipe_0_curr_target;
+     wire[3:0] pipe_1_curr_target;
+     wire[3:0] pipe_2_curr_target;
+     wire[3:0] pipe_3_curr_target;
+
+     always @(posedge clk) begin
+          //this coalesces the value
+          //if write enable, then write it
+
+           <=
+
+          c_scalar_output = pipe_0_output;
+          c_new_vector[pipe_0_curr_target + 15 : pipe_0_curr_target] <= pipe_0_output;
+          c_new_vector[pipe_1_curr_target + 15 : pipe_1_curr_target] <= pipe_1_output;
+          c_new_vector[pipe_2_curr_target + 15 : pipe_2_curr_target] <= pipe_2_output;
+          c_new_vector[pipe_3_curr_target + 15 : pipe_3_curr_target] <= pipe_3_output;
+     end
 
     //================================WRITEBACK===========================================
+    wire wb_reg_scalar_wen = (wb_isVadd || wb_isVsub || wb_isVmul || wb_isVdiv || wb_isVld || wb_isVdot);
+    wire wb_reg_vector_wen = (wb_isAdd || wb_isSub || wb_isMul || wb_isDiv || wb_isLd);
+    wire wb_mem_wen_0  = (wb_isVst || (wb_isSt && ((wb_ra_val % 4) === 0)) );
+    wire wb_mem_wen_1 = (wb_isVst || (wb_isSt && ((wb_ra_val % 4) === 1)) );
+     wire wb_mem_wen_2 = (wb_isVst || (wb_isSt && ((wb_ra_val % 4) === 2)) );
+     wire wb_mem_wen_3 = (wb_isVst || (wb_isSt && ((wb_ra_val % 4) === 3)) );
+
+     reg wb_pipe_0_output;
+     reg wb_pipe_1_output;
+     reg wb_pipe_2_output;
+     reg wb_pipe_3_output;
+     
+
+
     always @(posedge clk) begin
-         
+
+         //we need to write, given the outputs from the pipé
+
+
+
     end
     
 
