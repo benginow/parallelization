@@ -44,8 +44,10 @@ module main();
      //instr mem
      wire [15:0]instr_mem_raddr;
      wire [15:0]instr_mem_data;
+     assign instr_mem_raddr = f1_pc;
+     wire[15:0] instr_mem_data;
     instr_bank instr_mem(clk,
-         instr_mem_raddr[15:1], memData0);
+         instr_mem_raddr[15:1], instr_mem_data);
 
      //a counter that keeps track of 
     wire counter = 0;
@@ -90,117 +92,107 @@ module main();
          mem_bank_4_raddr[15:1], memData0,
          mem_bank_4_wen, memWAddr[15:1], memWData);
 
-    wire mem_bank_5_wen;
-    wire[15:0] mem_bank_5_raddr;
-    wire[15:0] mem_bank_5_data;
-    wire[15:0] mem_bank_5_waddr;
-    mem_bank5 mem(clk,
-         mem_bank_5_raddr[15:1], memData0,
-         mem_bank_5_wen, memWAddr[15:1], memWData);
-
-    wire mem_bank_6_wen;
-    wire[15:0] mem_bank_6_raddr;
-    wire[15:0] mem_bank_6_data;
-    wire[15:0] mem_bank_6_waddr;
-    mem_bank6 mem(clk,
-         mem_bank_6_raddr[15:1], memData0,
-         mem_bank_6_wen, memWAddr[15:1], memWData);
-
-    wire mem_bank_7_wen;
-    wire[15:0] mem_bank_7_raddr;
-    wire[15:0] mem_bank_7_data;
-    wire[15:0] mem_bank_7_waddr;
-    mem_bank7 mem(clk,
-         mem_bank_7_raddr[15:1], memData0,
-         mem_bank_7_wen, memWAddr[15:1], memWData);
-
-    wire mem_bank_8_wen;
-    wire[15:0] mem_bank_8_raddr;
-    wire[15:0] mem_bank_8_data;
-    wire[15:0] mem_bank_8_waddr;
-    mem_bank8 mem(clk,
-         mem_bank_8_raddr[15:1], memData0,
-         mem_bank_8_wen, memWAddr[15:1], memWData);
-
-    wire mem_bank_9_wen;
-    wire[15:0] mem_bank_9_raddr;
-    wire[15:0] mem_bank_9_data;
-    wire[15:0] mem_bank_9_waddr;
-    mem_bank9 mem(clk,
-         mem_bank_9_raddr[15:1], memData0,
-         mem_bank_9_wen, memWAddr[15:1], memWData);
-
-    wire mem_bank_10_wen;
-    wire[15:0] mem_bank_10_raddr;
-    wire[15:0] mem_bank_10_data;
-    wire[15:0] mem_bank_10_waddr;
-    mem_bank10 mem(clk,
-         mem_bank_10_raddr[15:1], memData0,
-         mem_bank_10_wen, memWAddr[15:1], memWData);
-
-    wire mem_bank_11_wen;
-    wire[15:0] mem_bank_11_raddr;
-    wire[15:0] mem_bank_11_data;
-    wire[15:0] mem_bank_11_waddr;
-    mem_bank11 mem(clk,
-         mem_bank_11_raddr[15:1], memData0,
-         mem_bank_11_wen, memWAddr[15:1], memWData);
-
-    wire mem_bank_12_wen;
-    wire[15:0] mem_bank_12_raddr;
-    wire[15:0] mem_bank_12_data;
-    wire[15:0] mem_bank_12_waddr;
-    mem_bank12 mem(clk,
-         mem_bank_12_raddr[15:1], memData0,
-         mem_bank_12_wen, memWAddr[15:1], memWData);
-
-    wire mem_bank_13_wen;
-    wire[15:0] mem_bank_13_raddr;
-    wire[15:0] mem_bank_13_data;
-    wire[15:0] mem_bank_13_waddr;
-    mem_bank13 mem(clk,
-         mem_bank_13_raddr[15:1], memData0,
-         mem_bank_13_wen, memWAddr[15:1], memWData);
-
-    wire mem_bank_14_wen;
-    wire[15:0] mem_bank_14_raddr;
-    wire[15:0] mem_bank_14_data;
-    wire[15:0] mem_bank_14_waddr;
-    mem_bank14 mem(clk,
-         mem_bank_14_raddr[15:1], memData0,
-         mem_bank_14_wen, memWAddr[15:1], memWData);
-
-    wire mem_bank_15_wen;
-    wire[15:0] mem_bank_15_raddr;
-    wire[15:0] mem_bank_15_data;
-    wire[15:0] mem_bank_15_waddr;
-    mem_bank15 mem(clk,
-         mem_bank_15_raddr[15:1], memData0,
-         mem_bank_15_wen, memWAddr[15:1], memWData);
-
-    wire mem_bank_16_wen;
-    wire[15:0] mem_bank_16_raddr;
-    wire[15:0] mem_bank_16_data;
-    wire[15:0] mem_bank_16_waddr;
-    mem_bank16 mem(clk,
-         mem_bank_16_raddr[15:1], memData0,
-         mem_bank_16_wen, memWAddr[15:1], memWData);
     
+    
+     wire flush; //global control signal
+    
+    //===============FETCH 1===============
     reg[15:0]f1_pc = 0;
+    wire f1_valid = 1;
+    wire f1_stall;
+    always @(posedge clk) begin
+         //work on the flush logic!!
+         if (!f1_flush) begin
+              //if we're flushing, we don't want to keep incrementing
+              f1_pc <= f1_pc + 2;
+         end
+    end 
+
+    //===============FETCH 2===============
+    wire f2_stall;
     reg[15:0]f2_pc = 16'hffff;
+    reg f2_valid <= 0;
+    always @(posedge clk) begin
+          f2_pc <= f1_pc;
+          //if f1 is an invalid wire, we want the next to be invalid
+          f2_invalid <= f1_flush ? 1 : f1_invalid;
+    end 
+
+    //===============DECODE===============
     reg[15:0]d_pc = 16'hffff;
-
-    assign instr_mem_raddr = f1_pc;
-
+    reg d_valid <= 0;
     wire[15:0]d_ins = instr_mem_data;
-    
-    always @(posedge clk) begin
-         f1_pc <= f1_pc + 2;
-    end 
 
+    wire [3:0]d_opcode = d_ins[15:12];
+    wire [3:0]d_subcode = d_ins[7:4];
+
+     wire d_isAdd = d_opcode == 4'b0000;
+    wire d_isSub = d_opcode == 4'b0001;
+     wire d_isMul = d_opcode == 4'b0010;
+     wire d_isDiv = d_opcode == 4'b0011;
+
+    wire d_isMovl = d_opcode == 4'b0100;
+    wire d_isMovh = d_opcode == 4'b0101;
+    wire d_isJmp = d_opcode == 4'b0110;
+    wire d_isScalarMem = d_opcode == 4'b0100;
+    wire d_isMem = (isScalarMem) || 
+               (d_opcode == 4'b1100) ||
+               (d_opcode == 4'b1101);
+
+    wire d_isJz = d_isJmp && d_subcode == 0;
+    wire d_isJnz = d_isJmp && d_subcode == 1;
+    wire d_isJs = d_isJmp && d_subcode == 2;
+    wire d_isJns = d_isJmp && d_subcode == 3;
+
+    wire d_isLd = d_isMem && d_subcode == 0;
+    wire d_isSt = d_isMem && d_subcode == 1;
+    
+    wire d_isVadd = d_opcode == 4'b1000;
+    wire d_isVsub = d_opcode == 4'b1001;
+    //just multiply each element
+    wire d_isVmul = d_opcode == 4'b1010;
+    wire d_isVdiv = d_opcode == 4'b1011;
+
+    wire d_isVld = d_opcode == 4'b1110;
+    wire d_isVst = d_opcode == 4'b1101;
+
+    wire d_isVdot = d_opcode == 4'1110;
+
+    wire d_isHalt = d_opcode == 4'1111;
+
+    wire d_is_vector_op = d_isVadd || d_isVsub || d_isVmul || d_isVdiv 
+               || d_isVld || d_isVst || d_isVdot;
+
+     wire d_ra = d_ins[11:8];
+     wire d_rb = d_ins[7:4];
+     wire d_rt = d_ins[3:0];
+
+     wire d_rx = (d_isAdd || d_isSub || d_isMul || d_isDiv) ||
+               (d_isVadd || d_isVsub || d_isVmul || d_isVdiv) ?
+               d_rb : d_rt;
+
+     reg [15:0]d_lastIns;
+     reg d_stallCycle = 0;
+     wire d_stall;
     always @(posedge clk) begin
-         f2_pc <= f1_pc;
-    end 
+         d_pc <= f2_pc;
+         d_invalid <= f2_invalid;
+          d_lastIns <= instr_mem_data;
+    end
+
+     // we will have four pipelines
+    exec_to_wb_pipe pipe_0(,,,,);
+
+     //valid when it's a vector op and we want to continue doing the vector op
+     //we need the vector length and then 
+    wire pipe_1_valid = d_is_vector_op;
+    exec_to_wb_pipe pipe_1(,,,,);
+
+     wire pipe_2_valid = d_is_vector_op;
+    exec_to_wb_pipe pipe_2(,,,,);
+
+     wire pipe_3_valid = d_is_vector_op;
+    exec_to_wb_pipe pipe_3(,,,,);
     
 
 
