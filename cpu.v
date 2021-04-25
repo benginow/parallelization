@@ -333,11 +333,103 @@ module main();
      wire[3:0] pipe_2_curr_target;
      wire[3:0] pipe_3_curr_target;
 
+        reg c_valid;
+        reg [15:0]c_pc;
+        reg [3:0]c_ins;
+        reg [3:0]c_opcode;
+        reg [3:0]c_subcode;
+
+        reg c_isAdd;
+        reg c_isSub;
+        reg c_isMul;
+        reg c_isDiv;
+
+        reg c_isMovl;
+        reg c_isMovh;
+        reg c_isJmp;
+        reg c_isScalarMem;
+        reg c_isMem;
+
+        reg c_isVadd;
+        reg c_isVsub;
+        reg c_isVmul;
+        reg c_isVdiv;
+
+        reg c_isJz;
+        reg c_isJnz;
+        reg c_isJs;
+        reg c_isJns;
+
+        reg c_isLd;
+        reg c_isSt;
+
+        reg c_isVld;
+        reg c_isVst;
+
+        reg c_isVdot;
+        reg c_isHalt;
+
+        reg c_is_vector_op;
+
+        reg c_ra;
+        reg c_rb;
+        reg c_rt;
+
+        reg c_rx;
+
+        reg c_ra_val;
+        reg c_rx_val;
+
      always @(posedge clk) begin
           //this coalesces the value
           //if write enable, then write it
 
-           <=
+          c_valid <= x2_valid;
+        c_pc <= x2_pc;
+        c_ins <= x2_ins;
+        c_opcode <= x2_opcode;
+        c_subcode <= x2_subcode;
+
+        c_isAdd <= x2_isAdd;
+        c_isSub <= x2_isSub;
+        c_isMul <= x2_isMul;
+        c_isDiv <= x2_isDiv;
+
+        c_isMovl <= x2_isMovl;
+        c_isMovh <= x2_isMovh;
+        c_isJmp <= x2_isJmp;
+        c_isScalarMem <= x2_isScalarMem;
+        c_isMem <= x2_isMem;
+
+        c_isVadd <= x2_isVadd;
+        c_isVsub <= x2_isVsub;
+        c_isVmul <= x2_isVmul;
+        c_isVdiv <= x2_isVdiv;
+
+        c_isJz <= x2_isJz;
+        c_isJnz <= x2_isJnz;
+        c_isJs <= x2_isJs;
+        c_isJns <= x2_isJns;
+
+        c_isLd <= x2_isLd;
+        c_isSt <= x2_isSt;
+
+        c_isVld <= x2_isVld;
+        c_isVst <= x2_isVst;
+
+        c_isVdot <= x2_isVdot;
+        c_isHalt <= x2_isHalt;
+
+        c_is_vector_op <= x2_is_vector_op;
+
+        c_ra <= x2_ra;
+        c_rb <= x2_ra;
+        c_rt <= x2_rt;
+
+        c_rx <= x2_rx;
+
+        c_ra_val <= x2_ra_val;
+        c_rx_val <= x2_rx_val;
 
           c_scalar_output = pipe_0_output;
           c_new_vector[pipe_0_curr_target + 15 : pipe_0_curr_target] <= pipe_0_output;
@@ -360,11 +452,108 @@ module main();
      reg wb_pipe_3_output;
      
 
+     wire wb_valid = 0;
+    reg [15:0]wb_pc;
+    reg [15:0]wb_ins;
+    reg [3:0]wb_opcode;
+    reg [3:0]wb_subcode;
+
+    reg wb_isAdd;
+    reg wb_isSub;
+    reg wb_isMul;
+    reg wb_isDiv;
+    
+    reg wb_isMovl;
+    reg wb_isMovh;
+    reg wb_isJmp;
+    reg wb_isScalarMem;
+    reg wb_isMem;
+
+    reg wb_isJz;
+    reg wb_isJnz;
+    reg wb_isJs;
+    reg wb_isJns;
+
+    reg wb_isLd;
+    reg wb_isSt;
+
+    reg wb_isVadd;
+    reg wb_isVsub;
+    reg wb_isVmul;
+    reg wb_isVdiv;
+
+    reg wb_isVld;
+    reg wb_isVst;
+
+    reg wb_isVdot;
+    reg wb_isHalt;
+
+    reg wb_is_vector_op;
+
+    reg[3:0] wb_ra;
+    reg[3:0] wb_rb;
+    reg[3:0] wb_rt;
+
+    reg[3:0] wb_rx;
+
+    reg[15:0] wb_ra_val;
+    reg[15:0] wb_rx_val;
+
+    reg wb_stallCycle;
+    
+    wire wb_stall;
+    wire wb_stuck;
+
 
     always @(posedge clk) begin
 
          //we need to write, given the outputs from the pipé
+        wb_valid <= c_valid;
+        wb_pc <= c_pc;
+        wb_ins <= c_ins;
+        wb_opcode <= c_opcode;
+        wb_subcode <= c_subcode;
 
+        wb_isAdd <= c_isAdd;
+        wb_isSub <= c_isSub;
+        wb_isMul <= c_isMul;
+        wb_isDiv <= c_isDiv;
+
+        wb_isMovl <= c_isMovl;
+        wb_isMovh <= c_isMovh;
+        wb_isJmp <= c_isJmp;
+        wb_isScalarMem <= c_isScalarMem;
+        wb_isMem <= c_isMem;
+
+        wb_isVadd <= c_isVadd;
+        wb_isVsub <= c_isVsub;
+        wb_isVmul <= c_isVmul;
+        wb_isVdiv <= c_isVdiv;
+
+        wb_isJz <= c_isJz;
+        wb_isJnz <= c_isJnz;
+        wb_isJs <= c_isJs;
+        wb_isJns <= c_isJns;
+
+        wb_isLd <= c_isLd;
+        wb_isSt <= c_isSt;
+
+        wb_isVld <= c_isVld;
+        wb_isVst <= c_isVst;
+
+        wb_isVdot <= c_isVdot;
+        wb_isHalt <= c_isHalt;
+
+        wb_is_vector_op <= c_is_vector_op;
+
+        wb_ra <= c_ra;
+        wb_rb <= c_ra;
+        wb_rt <= c_rt;
+
+        wb_rx <= c_rx;
+
+        wb_ra_val <= c_ra_val;
+        wb_rx_val <= c_rx_val;
 
 
     end
