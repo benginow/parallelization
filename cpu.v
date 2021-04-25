@@ -16,8 +16,10 @@ module main();
     counter ctr(halt,clk);
 
     //register file - 1 clock latency
+    //reads ra
     wire [3:0]regRAddr0;
     wire [15:0]regData0;
+    //reads rx
     wire [3:0]regRAddr1;
     wire [15:0]regData1;
     wire regWEn;
@@ -83,16 +85,6 @@ module main();
     mem_bank3 mem(clk,
          mem_bank_3_raddr[15:1], memData0,
          mem_bank_3_wen, memWAddr[15:1], memWData);
-
-    wire mem_bank_4_wen;
-    wire[15:0] mem_bank_4_raddr;
-    wire[15:0] mem_bank_4_data;
-    wire[15:0] mem_bank_4_waddr;
-    mem_bank4 mem(clk,
-         mem_bank_4_raddr[15:1], memData0,
-         mem_bank_4_wen, memWAddr[15:1], memWData);
-
-    
     
      wire flush; //global control signal
     
