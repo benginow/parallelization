@@ -116,8 +116,7 @@ module fetch_to_wb_pipe(input clk,
 
         x_rx <= d_rx;
 
-        //not sure if this logic is 100% correct, just writing things to write things for now
-        x_stallCycle <= d_stallCycle;
+        //TODO: logic to set stallCycle
     end
 
     //fetch 2, percolate all down
