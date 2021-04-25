@@ -172,19 +172,140 @@ module main();
           d_lastIns <= instr_mem_data;
     end
 
+     //================================FETCH REGS===========================================
+
+     wire[15:0] fr_ra_val;
+     wire[15:0] fr_rx_val;
+     //we also need 
+     wire[3:0] fr_vra_size;
+     wire[15:0] fr_vra_val;
+     //we want to stall by div 4 cycles
+     //if its not divisible by 4 -> ?? TODO: fix
+     //stalling logic
+     reg [3:0]fr_stallState; //0 = not stalling, 1 = final stall cycle, 2 = 2nd final...
+     wire[2:0] fr_num_stall_cycles = fr_vra_size << 2 + fr_vra_size[1:0]; //TODO check sizes
+     wire fr_stall_signal = (fr_stallState === 1 || fr_stallState !== 0); 
+
+     wire[3:0] fr_vrx_size;
+     wire[15:0] fr_vrx_val;
+
+     //values percolated from decode
+     wire fr_valid = 0;
+    reg [15:0]fr_pc;
+    reg [15:0]fr_ins;
+    reg [3:0]fr_opcode;
+    reg [3:0]fr_subcode;
+
+    reg fr_isAdd;
+    reg fr_isSub;
+    reg fr_isMul;
+    reg fr_isDiv;
+    
+    reg fr_isMovl;
+    reg fr_isMovh;
+    reg fr_isJmp;
+    reg fr_isScalarMem;
+    reg fr_isMem;
+
+    reg fr_isJz;
+    reg fr_isJnz;
+    reg fr_isJs;
+    reg fr_isJns;
+
+    reg fr_isLd;
+    reg fr_isSt;
+
+    reg fr_isVadd;
+    reg fr_isVsub;
+    reg fr_isVmul;
+    reg fr_isVdiv;
+
+    reg fr_isVld;
+    reg fr_isVst;
+
+    reg fr_isVdot;
+    reg fr_isHalt;
+
+    reg fr_is_vector_op;
+
+    reg fr_ra;
+    reg fr_rx;
+
+    reg[15:0] fr_ra_val;
+    reg[15:0] fr_rx_val;
+
+    always @(posedge clk) begin
+         //here, we want to decide, if this is a vector op, how many cycles to stall for
+          fr_stall_cycles <= fr_stall_cycles_temp - 1;
+
+         //percolate values
+          fr_valid <= d_valid;
+        fr_pc <= d_pc;
+        fr_ins <= d_ins;
+        fr_opcode <= d_opcode;
+        fr_subcode <= d_subcode;
+
+        fr_isAdd <= d_isAdd;
+        fr_isSub <= d_isSub;
+        fr_isMul <= d_isMul;
+        fr_isDiv <= d_isDiv;
+
+        fr_isMovl <= d_isMovl;
+        fr_isMovh <= d_isMovh;
+        fr_isJmp <= d_isJmp;
+        fr_isScalarMem <= d_isScalarMem;
+        fr_isMem <= d_isMem;
+
+        fr_isVadd <= d_isVadd;
+        fr_isVsub <= d_isVsub;
+        fr_isVmul <= d_isVmul;
+        fr_isVdiv <= d_isVdiv;
+
+        fr_isJz <= d_isJz;
+        fr_isJnz <= d_isJnz;
+        fr_isJs <= d_isJs;
+        fr_isJns <= d_isJns;
+
+        fr_isLd <= d_isLd;
+        fr_isSt <= d_isSt;
+
+        fr_isVld <= d_isVld;
+        fr_isVst <= d_isVst;
+
+        fr_isVdot <= d_isVdot;
+        fr_isHalt <= d_isHalt;
+
+        fr_is_vector_op <= d_is_vector_op;
+
+        fr_ra <= d_ra;
+        fr_rb <= d_ra;
+        fr_rt <= d_rt;
+
+        fr_rx <= d_rx;
+
+        fr_ra_val <= d_ra_val;
+        fr_rx_val <= d_rx_val;
+    end
+
      // we will have four pipelines
     exec_to_wb_pipe pipe_0(,,,,);
 
      //valid when it's a vector op and we want to continue doing the vector op
      //we need the vector length and then 
-    wire pipe_1_valid = d_is_vector_op;
+    wire pipe_1_valid = fr_is_vector_op;
     exec_to_wb_pipe pipe_1(,,,,);
 
-     wire pipe_2_valid = d_is_vector_op;
+     wire pipe_2_valid = !fr_isScalarMem;
     exec_to_wb_pipe pipe_2(,,,,);
 
-     wire pipe_3_valid = d_is_vector_op;
+     wire pipe_3_valid = !fr_isScalarMem;
     exec_to_wb_pipe pipe_3(,,,,);
+
+
+    //================================WRITEBACK===========================================
+    always @(posedge clk) begin
+         
+    end
     
 
 
