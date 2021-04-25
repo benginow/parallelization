@@ -13,7 +13,13 @@ module fetch_to_wb_pipe(input clk,
     input d_isVdot, input d_is_vector_op, input d_isHalt,
     input d_isScalarMem,
     input d_ra, input d_rb, input d_rt, input d_rx,
-    output x_stall, output flush); //needs output from WB
+    input x_regData0, input x_regData1,
+    input x_vregData0, input x_vregData1,
+    output x_stall, output flush,
+    output x_read_mem_addr,
+    output x_mem_WEn); //needs output from WB
+
+    wire x_read_mem_addr = x_regData0;
 
     wire x_valid = 0;
     reg [15:0]x_pc;
@@ -114,8 +120,7 @@ module fetch_to_wb_pipe(input clk,
         x_stallCycle <= d_stallCycle;
     end
 
-    
-
+    //fetch 2, percolate all down
     always @(posedge clk) begin
         
     end
