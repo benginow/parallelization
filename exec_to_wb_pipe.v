@@ -120,6 +120,8 @@ module fetch_to_wb_pipe(input clk,
         x_rt <= d_rt;
 
         x_rx <= d_rx;
+
+        //TODO: logic to set stallCycle
     end
 
 
