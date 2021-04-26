@@ -5,14 +5,6 @@
 module fetch_to_wb_pipe(input clk,
     input [15:0]d_pc, input [15:0]d_ins, 
     input [3:0]d_opcode, input [3:0]d_subcode, input d_valid,
-    input d_isMovh, input d_isMovl, input d_isJmp, input d_isMem,
-    input d_isAdd, input d_isSub, input d_isMul, input d_isdiv,
-    input d_isVdd, input d_Vsub, input d_Vmul, input d_Vdiv,
-    input d_isLd, input d_isSt, input d_isVld, input d_isVst,
-    input d_isJz, input d_isJnz, input d_isJs, input d_isJns,
-    input d_isVdot, input d_is_vector_op, input d_isHalt,
-    input d_isScalarMem,
-    input d_isDiv, input d_isVadd, input d_isVsub, input d_isVmul, input d_isVdiv,
     input d_stallCycle,
     input [3:0]d_ra, input [3:0]d_rb, input [3:0]d_rt, input [3:0]d_rx,
     input d_regData0, input d_regData1,
@@ -21,10 +13,56 @@ module fetch_to_wb_pipe(input clk,
     input [15:0]x_ra_val, input [15:0]x_rx_val,
     output x_stall, output flush,
     output x_read_mem_addr,
-    output x_mem_WEn); //needs output from WB
+    output x_mem_WEn,input x_regData0, input x_regData1,
+    input x_vregData0, input x_vregData1,
+    output x_stall, output flush,
+    output x_read_mem_addr,
+    output x_mem_WEn, 
+    output x2_stallCycle,
+    output x2_ra, output x2_rb, output x2_rt, output x2_rx,output result); //needs output from WB
 
 
     //================================EXECUTE 1===========================================
+    wire [3:0]x_opcode = x_ins[15:12];
+    wire [3:0]x_subcode = x_ins[7:4];
+
+     wire x_isAdd = x_opcode == 4'b0000;
+    wire x_isSub = x_opcode == 4'b0001;
+     wire x_isMul = x_opcode == 4'b0010;
+     wire x_isDiv = x_opcode == 4'b0011;
+
+    wire x_isMovl = x_opcode == 4'b0100;
+    wire x_isMovh = x_opcode == 4'b0101;
+    wire x_isJmp = x_opcode == 4'b0110;
+    wire x_isScalarMem = x_opcode == 4'b0100;
+    wire x_isMem = (x_isScalarMem) || 
+               (x_opcode == 4'b1100) ||
+               (x_opcode == 4'b1101);
+
+    wire x_isJz = x_isJmp && x_subcode == 0;
+    wire x_isJnz = x_isJmp && x_subcode == 1;
+    wire x_isJs = x_isJmp && x_subcode == 2;
+    wire x_isJns = x_isJmp && x_subcode == 3;
+
+    wire x_isLd = x_isMem && x_subcode == 0;
+    wire x_isSt = x_isMem && x_subcode == 1;
+    
+    wire x_isVadd = x_opcode == 4'b1000;
+    wire x_isVsub = x_opcode == 4'b1001;
+    //just multiply each element
+    wire x_isVmul = x_opcode == 4'b1010;
+    wire x_isVdiv = x_opcode == 4'b1011;
+
+    wire x_isVld = x_opcode == 4'b1110;
+    wire x_isVst = x_opcode == 4'b1101;
+
+    wire x_isVdot = x_opcode == 4'1110;
+
+    wire x_isHalt = x_opcode == 4'1111;
+
+    wire x_is_vector_op = x_isVadd || x_isVsub || x_isVmul || x_isVdiv 
+               || x_isVld || x_isVst || x_isVdot;
+
 
     wire x_read_mem_addr = x_regData0;
 
@@ -33,38 +71,6 @@ module fetch_to_wb_pipe(input clk,
     reg [15:0]x_ins;
     reg [3:0]x_opcode;
     reg [3:0]x_subcode;
-
-    reg x_isAdd;
-    reg x_isSub;
-    reg x_isMul;
-    reg x_isDiv;
-    
-    reg x_isMovl;
-    reg x_isMovh;
-    reg x_isJmp;
-    reg x_isScalarMem;
-    reg x_isMem;
-
-    reg x_isJz;
-    reg x_isJnz;
-    reg x_isJs;
-    reg x_isJns;
-
-    reg x_isLd;
-    reg x_isSt;
-
-    reg x_isVadd;
-    reg x_isVsub;
-    reg x_isVmul;
-    reg x_isVdiv;
-
-    reg x_isVld;
-    reg x_isVst;
-
-    reg x_isVdot;
-    reg x_isHalt;
-
-    reg x_is_vector_op;
 
     reg x_ra;
     reg x_rb;
@@ -77,7 +83,6 @@ module fetch_to_wb_pipe(input clk,
     wire x_stall;
     wire x_stuck;
     wire x_read_val = x_ra_val;
-    wire 
 
     //here, we want to read from mem
     always @(posedge clk) begin
@@ -86,38 +91,6 @@ module fetch_to_wb_pipe(input clk,
         x_ins <= d_ins;
         x_opcode <= d_opcode;
         x_subcode <= d_subcode;
-
-        x_isAdd <= d_isAdd;
-        x_isSub <= d_isSub;
-        x_isMul <= d_isMul;
-        x_isDiv <= d_isDiv;
-
-        x_isMovl <= d_isMovl;
-        x_isMovh <= d_isMovh;
-        x_isJmp <= d_isJmp;
-        x_isScalarMem <= d_isScalarMem;
-        x_isMem <= d_isMem;
-
-        x_isVadd <= d_isVadd;
-        x_isVsub <= d_isVsub;
-        x_isVmul <= d_isVmul;
-        x_isVdiv <= d_isVdiv;
-
-        x_isJz <= d_isJz;
-        x_isJnz <= d_isJnz;
-        x_isJs <= d_isJs;
-        x_isJns <= d_isJns;
-
-        x_isLd <= d_isLd;
-        x_isSt <= d_isSt;
-
-        x_isVld <= d_isVld;
-        x_isVst <= d_isVst;
-
-        x_isVdot <= d_isVdot;
-        x_isHalt <= d_isHalt;
-
-        x_is_vector_op <= d_is_vector_op;
 
         x_ra <= d_ra;
         x_rb <= d_ra;
@@ -131,6 +104,45 @@ module fetch_to_wb_pipe(input clk,
 
 
     //================================EXECUTE 2===========================================
+    wire [3:0]x2_opcode = x2_ins[15:12];
+    wire [3:0]x2_subcode = x2_ins[7:4];
+
+     wire x2_isAdd = x2_opcode == 4'b0000;
+    wire x2_isSub = x2_opcode == 4'b0001;
+     wire x2_isMul = x2_opcode == 4'b0010;
+     wire x2_isDiv = x2_opcode == 4'b0011;
+
+    wire x2_isMovl = x2_opcode == 4'b0100;
+    wire x2_isMovh = x2_opcode == 4'b0101;
+    wire x2_isJmp = x2_opcode == 4'b0110;
+    wire x2_isScalarMem = x2_opcode == 4'b0100;
+    wire x2_isMem = (x2_isScalarMem) || 
+               (x2_opcode == 4'b1100) ||
+               (x2_opcode == 4'b1101);
+
+    wire x2_isJz = x2_isJmp && x2_subcode == 0;
+    wire x2_isJnz = x2_isJmp && x2_subcode == 1;
+    wire x2_isJs = x2_isJmp && x2_subcode == 2;
+    wire x2_isJns = x2_isJmp && x2_subcode == 3;
+
+    wire x2_isLd = x2_isMem && x2_subcode == 0;
+    wire x2_isSt = x2_isMem && x2_subcode == 1;
+    
+    wire x2_isVadd = x2_opcode == 4'b1000;
+    wire x2_isVsub = x2_opcode == 4'b1001;
+    //just multiply each element
+    wire x2_isVmul = x2_opcode == 4'b1010;
+    wire x2_isVdiv = x2_opcode == 4'b1011;
+
+    wire x2_isVld = x2_opcode == 4'b1110;
+    wire x2_isVst = x2_opcode == 4'b1101;
+
+    wire x2_isVdot = x2_opcode == 4'1110;
+
+    wire x2_isHalt = x2_opcode == 4'1111;
+
+    wire x2_is_vector_op = x2_isVadd || x2_isVsub || x2_isVmul || x2_isVdiv 
+               || x2_isVld || x2_isVst || x2_isVdot;
 
 
     wire x2_valid = 0;
@@ -138,38 +150,6 @@ module fetch_to_wb_pipe(input clk,
     reg [15:0]x2_ins;
     reg [3:0]x2_opcode;
     reg [3:0]x2_subcode;
-
-    reg x2_isAdd;
-    reg x2_isSub;
-    reg x2_isMul;
-    reg x2_isDiv;
-    
-    reg x2_isMovl;
-    reg x2_isMovh;
-    reg x2_isJmp;
-    reg x2_isScalarMem;
-    reg x2_isMem;
-
-    reg x2_isJz;
-    reg x2_isJnz;
-    reg x2_isJs;
-    reg x2_isJns;
-
-    reg x2_isLd;
-    reg x2_isSt;
-
-    reg x2_isVadd;
-    reg x2_isVsub;
-    reg x2_isVmul;
-    reg x2_isVdiv;
-
-    reg x2_isVld;
-    reg x2_isVst;
-
-    reg x2_isVdot;
-    reg x2_isHalt;
-
-    reg x2_is_vector_op;
 
     reg x2_ra;
     reg x2_rb;
@@ -191,39 +171,6 @@ module fetch_to_wb_pipe(input clk,
         x2_ins <= x_ins;
         x2_opcode <= x_opcode;
         x2_subcode <= x_subcode;
-
-        x2_isAdd <= x_isAdd;
-        x2_isSub <= x_isSub;
-        x2_isMul <= x_isMul;
-        x2_isDiv <= x_isDiv;
-
-        x2_isMovl <= x_isMovl;
-        x2_isMovh <= x_isMovh;
-        x2_isJmp <= x_isJmp;
-        x2_isScalarMem <= x_isScalarMem;
-        x2_isMem <= x_isMem;
-
-        x2_isVadd <= x_isVadd;
-        x2_isVsub <= x_isVsub;
-        x2_isVmul <= x_isVmul;
-        x2_isVdiv <= x_isVdiv;
-
-        x2_isJz <= x_isJz;
-        x2_isJnz <= x_isJnz;
-        x2_isJs <= x_isJs;
-        x2_isJns <= x_isJns;
-
-        x2_isLd <= x_isLd;
-        x2_isSt <= x_isSt;
-
-        x2_isVld <= x_isVld;
-        x2_isVst <= x_isVst;
-
-        x2_isVdot <= x_isVdot;
-        x2_isHalt <= x_isHalt;
-
-        x2_is_vector_op <= x_is_vector_op;
-
         x2_ra <= x_ra;
         x2_rb <= x_ra;
         x2_rt <= x_rt;
@@ -234,17 +181,10 @@ module fetch_to_wb_pipe(input clk,
         x2_rx_val <= x_rx_val;
     end
 
-    
-
-    
-
-    wire[15:0] result = (wb_isAdd || wb_isVadd) ? wb_ra_val + wb_rx_val :
-                        (wb_isSub || wb_isVsub) ? wb_rx_val - wb_ra_val :
+    wire[15:0] result = (wb_isAdd || wb_isVadd) ? x2_ra_val + x2_rx_val :
+                        (wb_isSub || wb_isVsub) ? x2_rx_val - x2_ra_val :
                         (wb_isDiv || wb_isVdiv) ? 1 :
-                        (wb_isMul || wb_isVmul) ? 1 : 1;
-
-
-
+                        (wb_isMul || wb_isVmul) ? 1 : 0;
 
 
 endmodule

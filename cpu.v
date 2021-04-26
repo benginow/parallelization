@@ -127,7 +127,7 @@ module main();
     wire d_isMovh = d_opcode == 4'b0101;
     wire d_isJmp = d_opcode == 4'b0110;
     wire d_isScalarMem = d_opcode == 4'b0100;
-    wire d_isMem = (isScalarMem) || 
+    wire d_isMem = (d_isScalarMem) || 
                (d_opcode == 4'b1100) ||
                (d_opcode == 4'b1101);
 
@@ -173,6 +173,46 @@ module main();
     end
 
      //================================FETCH REGS===========================================
+    wire [3:0]fr_opcode = fr_ins[15:12];
+    wire [3:0]fr_subcode = fr_ins[7:4];
+
+     wire fr_isAdd = fr_opcode == 4'b0000;
+    wire fr_isSub = fr_opcode == 4'b0001;
+     wire fr_isMul = fr_opcode == 4'b0010;
+     wire fr_isDiv = fr_opcode == 4'b0011;
+
+    wire fr_isMovl = fr_opcode == 4'b0100;
+    wire fr_isMovh = fr_opcode == 4'b0101;
+    wire fr_isJmp = fr_opcode == 4'b0110;
+    wire fr_isScalarMem = fr_opcode == 4'b0100;
+    wire fr_isMem = (fr_isScalarMem) || 
+               (fr_opcode == 4'b1100) ||
+               (fr_opcode == 4'b1101);
+
+    wire fr_isJz = fr_isJmp && fr_subcode == 0;
+    wire fr_isJnz = fr_isJmp && fr_subcode == 1;
+    wire fr_isJs = fr_isJmp && fr_subcode == 2;
+    wire fr_isJns = fr_isJmp && fr_subcode == 3;
+
+    wire fr_isLd = fr_isMem && fr_subcode == 0;
+    wire fr_isSt = fr_isMem && fr_subcode == 1;
+    
+    wire fr_isVadd = fr_opcode == 4'b1000;
+    wire fr_isVsub = fr_opcode == 4'b1001;
+    //just multiply each element
+    wire fr_isVmul = fr_opcode == 4'b1010;
+    wire fr_isVdiv = fr_opcode == 4'b1011;
+
+    wire fr_isVld = fr_opcode == 4'b1110;
+    wire fr_isVst = fr_opcode == 4'b1101;
+
+    wire fr_isVdot = fr_opcode == 4'1110;
+
+    wire fr_isHalt = fr_opcode == 4'1111;
+
+    wire fr_is_vector_op = fr_isVadd || fr_isVsub || fr_isVmul || fr_isVdiv 
+               || fr_isVld || fr_isVst || fr_isVdot;
+
 
      wire[15:0] fr_ra_val;
      wire[15:0] fr_rx_val;
@@ -195,36 +235,6 @@ module main();
     reg [15:0]fr_ins;
     reg [3:0]fr_opcode;
     reg [3:0]fr_subcode;
-
-    reg fr_isAdd;
-    reg fr_isSub;
-    reg fr_isMul;
-    reg fr_isDiv;
-    
-    reg fr_isMovl;
-    reg fr_isMovh;
-    reg fr_isJmp;
-    reg fr_isScalarMem;
-    reg fr_isMem;
-
-    reg fr_isJz;
-    reg fr_isJnz;
-    reg fr_isJs;
-    reg fr_isJns;
-
-    reg fr_isLd;
-    reg fr_isSt;
-
-    reg fr_isVadd;
-    reg fr_isVsub;
-    reg fr_isVmul;
-    reg fr_isVdiv;
-
-    reg fr_isVld;
-    reg fr_isVst;
-
-    reg fr_isVdot;
-    reg fr_isHalt;
 
     reg fr_is_vector_op;
 
@@ -253,38 +263,6 @@ module main();
         fr_opcode <= d_opcode;
         fr_subcode <= d_subcode;
 
-        fr_isAdd <= d_isAdd;
-        fr_isSub <= d_isSub;
-        fr_isMul <= d_isMul;
-        fr_isDiv <= d_isDiv;
-
-        fr_isMovl <= d_isMovl;
-        fr_isMovh <= d_isMovh;
-        fr_isJmp <= d_isJmp;
-        fr_isScalarMem <= d_isScalarMem;
-        fr_isMem <= d_isMem;
-
-        fr_isVadd <= d_isVadd;
-        fr_isVsub <= d_isVsub;
-        fr_isVmul <= d_isVmul;
-        fr_isVdiv <= d_isVdiv;
-
-        fr_isJz <= d_isJz;
-        fr_isJnz <= d_isJnz;
-        fr_isJs <= d_isJs;
-        fr_isJns <= d_isJns;
-
-        fr_isLd <= d_isLd;
-        fr_isSt <= d_isSt;
-
-        fr_isVld <= d_isVld;
-        fr_isVst <= d_isVst;
-
-        fr_isVdot <= d_isVdot;
-        fr_isHalt <= d_isHalt;
-
-        fr_is_vector_op <= d_is_vector_op;
-
         fr_ra <= d_ra;
         fr_rb <= d_ra;
         fr_rt <= d_rt;
@@ -300,7 +278,8 @@ module main();
      wire[3:0] pipe_0_target_index = (stallCycle-1)*4;
      wire[16:0] pipe_0_target = fr_is_vector_op ? fr_vra_val[pipe_0_target_index*16: (pipe_0_target_index+1)*16-1] : fr_va_val;
      wire[16:0] pipe_0_output;
-    exec_to_wb_pipe pipe_0(,,,,);
+    wire[15:0]pipe_0_result;
+    exec_to_wb_pipe pipe_0(,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,pipe_0_result);
 
      //valid when it's a vector op and we want to continue doing the vector op
      //we need the vector length and then 
@@ -308,24 +287,67 @@ module main();
      wire[16:0] pipe_1_target = fr_vra_val[pipe_1_target_index*16: (pipe_1_target_index+1)*16-1];
     wire pipe_1_valid = fr_stall_signal;
     wire[16:0] pipe_1_output;
-    exec_to_wb_pipe pipe_1(,,,,);
+    wire[15:0]pipe_1_result;
+    exec_to_wb_pipe pipe_1(,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,pipe_1_result);
 
      wire[3:0] pipe_2_target_index = (stallCycle-1)*4 + 2;  
       wire[16:0] pipe_2_target_ra = fr_vra_val[pipe_2_target_index*16: (pipe_2_target_index+1)*16-1];
      wire pipe_2_valid = fr_stall_signal;
      wire[16:0] pipe_2_output;
-    exec_to_wb_pipe pipe_2(,,,,);
+    wire[15:0]pipe_2_result;
+    exec_to_wb_pipe pipe_2(,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,pipe_2_result);
 
      wire[3:0] pipe_3_target_index = (stallCycle-1)*4 + 3;
      wire[16:0] pipe_3_target = fr_vra_val[pipe_3_target_index*16: (pipe_3_target_index+1)*16-1]
      wire pipe_3_valid = r_stall_signal;
      wire[16:0] pipe_3_output;
-    exec_to_wb_pipe pipe_3(,,,,);
+    wire[15:0]pipe_3_result;
+    exec_to_wb_pipe pipe_3(,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,pipe_3_result);
 
      //we need to keep updting the vector output
      //wire [255:0]fr_vector_output;
 
     //================================COALESCE============================================
+    wire [3:0]c_opcode = c_ins[15:12];
+    wire [3:0]c_subcode = c_ins[7:4];
+
+     wire c_isAdd = c_opcode == 4'b0000;
+    wire c_isSub = c_opcode == 4'b0001;
+     wire c_isMul = c_opcode == 4'b0010;
+     wire c_isDiv = c_opcode == 4'b0011;
+
+    wire c_isMovl = c_opcode == 4'b0100;
+    wire c_isMovh = c_opcode == 4'b0101;
+    wire c_isJmp = c_opcode == 4'b0110;
+    wire c_isScalarMem = c_opcode == 4'b0100;
+    wire c_isMem = (c_isScalarMem) || 
+               (c_opcode == 4'b1100) ||
+               (c_opcode == 4'b1101);
+
+    wire c_isJz = c_isJmp && c_subcode == 0;
+    wire c_isJnz = c_isJmp && c_subcode == 1;
+    wire c_isJs = c_isJmp && c_subcode == 2;
+    wire c_isJns = c_isJmp && c_subcode == 3;
+
+    wire c_isLd = c_isMem && c_subcode == 0;
+    wire c_isSt = c_isMem && c_subcode == 1;
+    
+    wire c_isVadd = c_opcode == 4'b1000;
+    wire c_isVsub = c_opcode == 4'b1001;
+    //just multiply each element
+    wire c_isVmul = c_opcode == 4'b1010;
+    wire c_isVdiv = c_opcode == 4'b1011;
+
+    wire c_isVld = c_opcode == 4'b1110;
+    wire c_isVst = c_opcode == 4'b1101;
+
+    wire c_isVdot = c_opcode == 4'1110;
+
+    wire c_isHalt = c_opcode == 4'1111;
+
+    wire c_is_vector_op = c_isVadd || c_isVsub || c_isVmul || c_isVdiv 
+               || c_isVld || c_isVst || c_isVdot;
+
      reg [255:0] c_new_vector;
      reg [15:0] c_scalar_output;
      wire[3:0] pipe_0_curr_target;
@@ -338,38 +360,6 @@ module main();
         reg [3:0]c_ins;
         reg [3:0]c_opcode;
         reg [3:0]c_subcode;
-
-        reg c_isAdd;
-        reg c_isSub;
-        reg c_isMul;
-        reg c_isDiv;
-
-        reg c_isMovl;
-        reg c_isMovh;
-        reg c_isJmp;
-        reg c_isScalarMem;
-        reg c_isMem;
-
-        reg c_isVadd;
-        reg c_isVsub;
-        reg c_isVmul;
-        reg c_isVdiv;
-
-        reg c_isJz;
-        reg c_isJnz;
-        reg c_isJs;
-        reg c_isJns;
-
-        reg c_isLd;
-        reg c_isSt;
-
-        reg c_isVld;
-        reg c_isVst;
-
-        reg c_isVdot;
-        reg c_isHalt;
-
-        reg c_is_vector_op;
 
         reg c_ra;
         reg c_rb;
@@ -390,38 +380,6 @@ module main();
         c_opcode <= x2_opcode;
         c_subcode <= x2_subcode;
 
-        c_isAdd <= x2_isAdd;
-        c_isSub <= x2_isSub;
-        c_isMul <= x2_isMul;
-        c_isDiv <= x2_isDiv;
-
-        c_isMovl <= x2_isMovl;
-        c_isMovh <= x2_isMovh;
-        c_isJmp <= x2_isJmp;
-        c_isScalarMem <= x2_isScalarMem;
-        c_isMem <= x2_isMem;
-
-        c_isVadd <= x2_isVadd;
-        c_isVsub <= x2_isVsub;
-        c_isVmul <= x2_isVmul;
-        c_isVdiv <= x2_isVdiv;
-
-        c_isJz <= x2_isJz;
-        c_isJnz <= x2_isJnz;
-        c_isJs <= x2_isJs;
-        c_isJns <= x2_isJns;
-
-        c_isLd <= x2_isLd;
-        c_isSt <= x2_isSt;
-
-        c_isVld <= x2_isVld;
-        c_isVst <= x2_isVst;
-
-        c_isVdot <= x2_isVdot;
-        c_isHalt <= x2_isHalt;
-
-        c_is_vector_op <= x2_is_vector_op;
-
         c_ra <= x2_ra;
         c_rb <= x2_ra;
         c_rt <= x2_rt;
@@ -439,56 +397,65 @@ module main();
      end
 
     //================================WRITEBACK===========================================
+     wire [3:0]wb_opcode = wb_ins[15:12];
+    wire [3:0]wb_subcode = wb_ins[7:4];
+
+     wire wb_isAdd = wb_opcode == 4'b0000;
+    wire wb_isSub = wb_opcode == 4'b0001;
+     wire wb_isMul = wb_opcode == 4'b0010;
+     wire wb_isDiv = wb_opcode == 4'b0011;
+
+    wire wb_isMovl = wb_opcode == 4'b0100;
+    wire wb_isMovh = wb_opcode == 4'b0101;
+    wire wb_isJmp = wb_opcode == 4'b0110;
+    wire wb_isScalarMem = wb_opcode == 4'b0100;
+    wire wb_isMem = (wb_isScalarMem) || 
+               (wb_opcode == 4'b1100) ||
+               (wb_opcode == 4'b1101);
+
+    wire wb_isJz = wb_isJmp && wb_subcode == 0;
+    wire wb_isJnz = wb_isJmp && wb_subcode == 1;
+    wire wb_isJs = wb_isJmp && wb_subcode == 2;
+    wire wb_isJns = wb_isJmp && wb_subcode == 3;
+
+    wire wb_isLd = wb_isMem && wb_subcode == 0;
+    wire wb_isSt = wb_isMem && wb_subcode == 1;
+    
+    wire wb_isVadd = wb_opcode == 4'b1000;
+    wire wb_isVsub = wb_opcode == 4'b1001;
+    //just multiply each element
+    wire wb_isVmul = wb_opcode == 4'b1010;
+    wire wb_isVdiv = wb_opcode == 4'b1011;
+
+    wire wb_isVld = wb_opcode == 4'b1110;
+    wire wb_isVst = wb_opcode == 4'b1101;
+
+    wire wb_isVdot = wb_opcode == 4'1110;
+
+    wire wb_isHalt = wb_opcode == 4'1111;
+
+    wire wb_is_vector_op = wb_isVadd || wb_isVsub || wb_isVmul || wb_isVdiv 
+               || wb_isVld || wb_isVst || wb_isVdot;
+
+
     wire wb_reg_scalar_wen = (wb_isVadd || wb_isVsub || wb_isVmul || wb_isVdiv || wb_isVld || wb_isVdot);
     wire wb_reg_vector_wen = (wb_isAdd || wb_isSub || wb_isMul || wb_isDiv || wb_isLd);
     wire wb_mem_wen_0  = (wb_isVst || (wb_isSt && ((wb_ra_val % 4) === 0)) );
     wire wb_mem_wen_1 = (wb_isVst || (wb_isSt && ((wb_ra_val % 4) === 1)) );
-     wire wb_mem_wen_2 = (wb_isVst || (wb_isSt && ((wb_ra_val % 4) === 2)) );
-     wire wb_mem_wen_3 = (wb_isVst || (wb_isSt && ((wb_ra_val % 4) === 3)) );
+    wire wb_mem_wen_2 = (wb_isVst || (wb_isSt && ((wb_ra_val % 4) === 2)) );
+    wire wb_mem_wen_3 = (wb_isVst || (wb_isSt && ((wb_ra_val % 4) === 3)) );
 
      reg wb_pipe_0_output;
      reg wb_pipe_1_output;
      reg wb_pipe_2_output;
      reg wb_pipe_3_output;
-     
+
 
      wire wb_valid = 0;
     reg [15:0]wb_pc;
     reg [15:0]wb_ins;
     reg [3:0]wb_opcode;
     reg [3:0]wb_subcode;
-
-    reg wb_isAdd;
-    reg wb_isSub;
-    reg wb_isMul;
-    reg wb_isDiv;
-    
-    reg wb_isMovl;
-    reg wb_isMovh;
-    reg wb_isJmp;
-    reg wb_isScalarMem;
-    reg wb_isMem;
-
-    reg wb_isJz;
-    reg wb_isJnz;
-    reg wb_isJs;
-    reg wb_isJns;
-
-    reg wb_isLd;
-    reg wb_isSt;
-
-    reg wb_isVadd;
-    reg wb_isVsub;
-    reg wb_isVmul;
-    reg wb_isVdiv;
-
-    reg wb_isVld;
-    reg wb_isVst;
-
-    reg wb_isVdot;
-    reg wb_isHalt;
-
-    reg wb_is_vector_op;
 
     reg[3:0] wb_ra;
     reg[3:0] wb_rb;
@@ -498,6 +465,7 @@ module main();
 
     reg[15:0] wb_ra_val;
     reg[15:0] wb_rx_val;
+    
 
     reg wb_stallCycle;
     
@@ -513,38 +481,6 @@ module main();
         wb_ins <= c_ins;
         wb_opcode <= c_opcode;
         wb_subcode <= c_subcode;
-
-        wb_isAdd <= c_isAdd;
-        wb_isSub <= c_isSub;
-        wb_isMul <= c_isMul;
-        wb_isDiv <= c_isDiv;
-
-        wb_isMovl <= c_isMovl;
-        wb_isMovh <= c_isMovh;
-        wb_isJmp <= c_isJmp;
-        wb_isScalarMem <= c_isScalarMem;
-        wb_isMem <= c_isMem;
-
-        wb_isVadd <= c_isVadd;
-        wb_isVsub <= c_isVsub;
-        wb_isVmul <= c_isVmul;
-        wb_isVdiv <= c_isVdiv;
-
-        wb_isJz <= c_isJz;
-        wb_isJnz <= c_isJnz;
-        wb_isJs <= c_isJs;
-        wb_isJns <= c_isJns;
-
-        wb_isLd <= c_isLd;
-        wb_isSt <= c_isSt;
-
-        wb_isVld <= c_isVld;
-        wb_isVst <= c_isVst;
-
-        wb_isVdot <= c_isVdot;
-        wb_isHalt <= c_isHalt;
-
-        wb_is_vector_op <= c_is_vector_op;
 
         wb_ra <= c_ra;
         wb_rb <= c_ra;
