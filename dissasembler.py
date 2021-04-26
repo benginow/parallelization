@@ -46,7 +46,7 @@ def main (file_name):
             rt = "{0:04b}".format(rt)
 
             ins2binary = opcode + ra + rb + rt
-        elif ins == "vadd" or ins == "vsub" or ins == "vmul" or ins == "vdiv" or ins == "vdot":
+        elif ins == "vadd" or ins == "vsub" or ins == "vmul" or ins == "vdiv":
             ra = int(line[2].replace("vr",""))
             ra = "{0:04b}".format(ra)
 
@@ -57,9 +57,20 @@ def main (file_name):
             rt = "{0:04b}".format(rt)
 
             ins2binary = opcode + ra + rb + rt
+        elif ins == "vdot":
+            ra = int(line[2].replace("vr",""))
+            ra = "{0:04b}".format(ra)
+
+            rb = int(line[3].replace("vr",""))
+            rb = "{0:04b}".format(rb)
+
+            rt = int(line[1].replace("r",""))
+            rt = "{0:04b}".format(rt)
+
+            ins2binary = opcode + ra + rb + rt
         elif ins == "vld" or ins == "vst":
             #vld vrt,vra,$imm
-            ra = int(line[2].replace("vr",""))
+            ra = int(line[2].replace("r",""))
             ra = "{0:04b}".format(ra)
 
             i = int(line[3])
@@ -95,8 +106,8 @@ def main (file_name):
     open(file_name + ".hex","w")
     f = open(file_name + ".hex","a")
     for line in ins2write:
-        encoded = hex(int(line,2))
+        encoded = "0x{:04x}".format(int(line,2))
         encoded = encoded.replace("0x","")
         f.write(encoded + "\n")
 
-main ("test1")
+main ("test3")
