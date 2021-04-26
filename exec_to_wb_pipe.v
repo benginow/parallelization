@@ -76,6 +76,8 @@ module fetch_to_wb_pipe(input clk,
     
     wire x_stall;
     wire x_stuck;
+    wire x_read_val = x_ra_val;
+    wire 
 
     //here, we want to read from mem
     always @(posedge clk) begin
@@ -234,57 +236,7 @@ module fetch_to_wb_pipe(input clk,
 
     
 
-    wire wb_valid = 0;
-    reg [15:0]wb_pc;
-    reg [15:0]wb_ins;
-    reg [3:0]wb_opcode;
-    reg [3:0]wb_subcode;
-
-    reg wb_isAdd;
-    reg wb_isSub;
-    reg wb_isMul;
-    reg wb_isDiv;
     
-    reg wb_isMovl;
-    reg wb_isMovh;
-    reg wb_isJmp;
-    reg wb_isScalarMem;
-    reg wb_isMem;
-
-    reg wb_isJz;
-    reg wb_isJnz;
-    reg wb_isJs;
-    reg wb_isJns;
-
-    reg wb_isLd;
-    reg wb_isSt;
-
-    reg wb_isVadd;
-    reg wb_isVsub;
-    reg wb_isVmul;
-    reg wb_isVdiv;
-
-    reg wb_isVld;
-    reg wb_isVst;
-
-    reg wb_isVdot;
-    reg wb_isHalt;
-
-    reg wb_is_vector_op;
-
-    reg[3:0] wb_ra;
-    reg[3:0] wb_rb;
-    reg[3:0] wb_rt;
-
-    reg[3:0] wb_rx;
-
-    reg[15:0] wb_ra_val;
-    reg[15:0] wb_rx_val;
-
-    reg wb_stallCycle;
-    
-    wire wb_stall;
-    wire wb_stuck;
 
     wire[15:0] result = (wb_isAdd || wb_isVadd) ? wb_ra_val + wb_rx_val :
                         (wb_isSub || wb_isVsub) ? wb_rx_val - wb_ra_val :
@@ -292,60 +244,6 @@ module fetch_to_wb_pipe(input clk,
                         (wb_isMul || wb_isVmul) ? 1 : 1;
 
 
-    always @(posedge clk) begin
-
-
-        //need to set load and store data as well as wen
-
-        //need to do addn
-
-        wb_valid <= x2_valid;
-        wb_pc <= x2_pc;
-        wb_ins <= x2_ins;
-        wb_opcode <= x2_opcode;
-        wb_subcode <= x2_subcode;
-
-        wb_isAdd <= x2_isAdd;
-        wb_isSub <= x2_isSub;
-        wb_isMul <= x2_isMul;
-        wb_isDiv <= x2_isDiv;
-
-        wb_isMovl <= x2_isMovl;
-        wb_isMovh <= x2_isMovh;
-        wb_isJmp <= x2_isJmp;
-        wb_isScalarMem <= x2_isScalarMem;
-        wb_isMem <= x2_isMem;
-
-        wb_isVadd <= x2_isVadd;
-        wb_isVsub <= x2_isVsub;
-        wb_isVmul <= x2_isVmul;
-        wb_isVdiv <= x2_isVdiv;
-
-        wb_isJz <= x2_isJz;
-        wb_isJnz <= x2_isJnz;
-        wb_isJs <= x2_isJs;
-        wb_isJns <= x2_isJns;
-
-        wb_isLd <= x2_isLd;
-        wb_isSt <= x2_isSt;
-
-        wb_isVld <= x2_isVld;
-        wb_isVst <= x2_isVst;
-
-        wb_isVdot <= x2_isVdot;
-        wb_isHalt <= x2_isHalt;
-
-        wb_is_vector_op <= x2_is_vector_op;
-
-        wb_ra <= x2_ra;
-        wb_rb <= x2_ra;
-        wb_rt <= x2_rt;
-
-        wb_rx <= x2_rx;
-
-        wb_ra_val <= x2_ra_val;
-        wb_rx_val <= x2_rx_val;
-    end
 
 
 
