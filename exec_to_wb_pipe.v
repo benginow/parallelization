@@ -26,18 +26,18 @@ module fetch_to_wb_pipe(input clk,
     wire [3:0]x_opcode = x_ins[15:12];
     wire [3:0]x_subcode = x_ins[7:4];
 
-     wire x_isAdd = x_opcode == 4'b0000;
+    wire x_isAdd = x_opcode == 4'b0000;
     wire x_isSub = x_opcode == 4'b0001;
-     wire x_isMul = x_opcode == 4'b0010;
-     wire x_isDiv = x_opcode == 4'b0011;
+    wire x_isMul = x_opcode == 4'b0010;
+    wire x_isDiv = x_opcode == 4'b0011;
 
     wire x_isMovl = x_opcode == 4'b0100;
     wire x_isMovh = x_opcode == 4'b0101;
     wire x_isJmp = x_opcode == 4'b0110;
     wire x_isScalarMem = x_opcode == 4'b0100;
     wire x_isMem = (x_isScalarMem) || 
-               (x_opcode == 4'b1100) ||
-               (x_opcode == 4'b1101);
+                (x_opcode == 4'b1100) ||
+                (x_opcode == 4'b1101);
 
     wire x_isJz = x_isJmp && x_subcode == 0;
     wire x_isJnz = x_isJmp && x_subcode == 1;
@@ -46,7 +46,7 @@ module fetch_to_wb_pipe(input clk,
 
     wire x_isLd = x_isMem && x_subcode == 0;
     wire x_isSt = x_isMem && x_subcode == 1;
-    
+
     wire x_isVadd = x_opcode == 4'b1000;
     wire x_isVsub = x_opcode == 4'b1001;
     //just multiply each element
@@ -61,7 +61,7 @@ module fetch_to_wb_pipe(input clk,
     wire x_isHalt = x_opcode == 4'1111;
 
     wire x_is_vector_op = x_isVadd || x_isVsub || x_isVmul || x_isVdiv 
-               || x_isVld || x_isVst || x_isVdot;
+                || x_isVld || x_isVst || x_isVdot;
 
 
     wire x_read_mem_addr = x_regData0;
@@ -79,7 +79,7 @@ module fetch_to_wb_pipe(input clk,
     reg x_rx;
 
     reg x_stallCycle;
-    
+
     wire x_stall;
     wire x_stuck;
     wire x_read_val = x_ra_val;
@@ -107,18 +107,18 @@ module fetch_to_wb_pipe(input clk,
     wire [3:0]x2_opcode = x2_ins[15:12];
     wire [3:0]x2_subcode = x2_ins[7:4];
 
-     wire x2_isAdd = x2_opcode == 4'b0000;
+    wire x2_isAdd = x2_opcode == 4'b0000;
     wire x2_isSub = x2_opcode == 4'b0001;
-     wire x2_isMul = x2_opcode == 4'b0010;
-     wire x2_isDiv = x2_opcode == 4'b0011;
+    wire x2_isMul = x2_opcode == 4'b0010;
+    wire x2_isDiv = x2_opcode == 4'b0011;
 
     wire x2_isMovl = x2_opcode == 4'b0100;
     wire x2_isMovh = x2_opcode == 4'b0101;
     wire x2_isJmp = x2_opcode == 4'b0110;
     wire x2_isScalarMem = x2_opcode == 4'b0100;
     wire x2_isMem = (x2_isScalarMem) || 
-               (x2_opcode == 4'b1100) ||
-               (x2_opcode == 4'b1101);
+                (x2_opcode == 4'b1100) ||
+                (x2_opcode == 4'b1101);
 
     wire x2_isJz = x2_isJmp && x2_subcode == 0;
     wire x2_isJnz = x2_isJmp && x2_subcode == 1;
@@ -127,7 +127,7 @@ module fetch_to_wb_pipe(input clk,
 
     wire x2_isLd = x2_isMem && x2_subcode == 0;
     wire x2_isSt = x2_isMem && x2_subcode == 1;
-    
+
     wire x2_isVadd = x2_opcode == 4'b1000;
     wire x2_isVsub = x2_opcode == 4'b1001;
     //just multiply each element
@@ -142,7 +142,7 @@ module fetch_to_wb_pipe(input clk,
     wire x2_isHalt = x2_opcode == 4'1111;
 
     wire x2_is_vector_op = x2_isVadd || x2_isVsub || x2_isVmul || x2_isVdiv 
-               || x2_isVld || x2_isVst || x2_isVdot;
+                || x2_isVld || x2_isVst || x2_isVdot;
 
 
     wire x2_valid = 0;
@@ -161,7 +161,7 @@ module fetch_to_wb_pipe(input clk,
     reg[15:0] x2_rx_val;
 
     reg x2_stallCycle;
-    
+
     wire x2_stall;
     wire x2_stuck;
     //fetch 2, percolate all down
