@@ -32,7 +32,7 @@ module fetch_to_wb_pipe(input clk,
     //do the arithmetic on operands, then percolate
 
     reg [15:0]x_ins;
-    
+
     wire [3:0]x_opcode = x_ins[15:12];
     wire [3:0]x_subcode = x_ins[7:4];
     
