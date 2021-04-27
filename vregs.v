@@ -14,18 +14,23 @@
 module vregs(input clk, 
     input [3:0]rAddr0, output [255:0]rData0, output rLen0,
     input [3:0]rAddr1, output [255:0]rData1, output rLen1,
-    input wEn, input [3:0]wAddr, input[255:0]wData);
+    input wEn, input [3:0]wAddr, input[3:0]wLen, input[255:0]wData);
 
     //we can store 16 8x8 matrices
     reg [255:0]data[0:15];
+    reg [3:0]dataLen[0:15];
 
     assign rData0 = data[rAddr0];
     assign rData1 = data[rAddr1];
+
+    assign rLen0 = dataLen[rAddr0];
+    assign rLen1 = dataLen[rAddr1];
 
     //wire wBitNum = wind * 16;
     always @(posedge clk) begin
         if (wEn) begin
             data[wAddr] <= wData;
+            dataLen[wAddr] <= wLen;
         end
     end
 
