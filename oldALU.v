@@ -3,28 +3,32 @@
 //we need to pass in all of the variables from decode?
 //maybe not...
 module fetch_to_wb_pipe(input clk,
-    input [15:0]d_pc, input [15:0]d_ins, 
-    input [3:0]d_opcode, input [3:0]d_subcode, input d_valid,
-    input d_stallCycle,
-    input [3:0]d_ra, input [3:0]d_rb, input [3:0]d_rt, input [3:0]d_rx,
-    input d_regData0, input d_regData1,
-    input d_vregData0, input d_vregData1,
+    input [15:0]fr_pc, input [15:0]fr_ins, 
+    input [3:0]fr_opcode, input [3:0]fr_subcode, input fr_valid,
+    input fr_stallCycle,
+    input [3:0]fr_ra, input [3:0]fr_rb, input [3:0]fr_rt, input [3:0]fr_rx,
+    input fr_regData0, input fr_regData1,
+    input fr_vregData0, input fr_vregData1,
+    input fr_memData,
     //these are wires
-    input [15:0]x_ra_val, input [15:0]x_rx_val,
-    output x_stall, output flush,
-    output x_read_mem_addr,
-    output x_mem_WEn,input x_regData0, input x_regData1,
-    input x_vregData0, input x_vregData1,
-    output x_stall, output flush,
-    output x_read_mem_addr,
-    output x_mem_WEn, 
-    output x2_stallCycle,
-    output x2_ra, output x2_rb, output x2_rt, output x2_rx,output result); //needs output from WB
+    // input [15:0]x2_ra_val, input [15:0]x2_rx_val,
+    // output x2_stall, output x2_flush,
+    // output x2_read_mem_addr,
+    // output x2_mem_WEn,input x2_regData0, input x2_regData1,
+    // input x2_vregData0, input x2_vregData1,
+    // output x2_stall, output x2_flush,
+    // output x2_read_mem_addr,
+    // output x2_mem_WEn, 
+    // output x2_stallCycle,
+    // output x2_ra, output x2_rb, output x2_rt, output x2_rx, 
+    output result); //needs output from WB
 
 
     //================================EXECUTE 1===========================================
     wire [3:0]x_opcode = x_ins[15:12];
     wire [3:0]x_subcode = x_ins[7:4];
+
+    wire [7:0]x_ival = x_ins[11:4];
 
     wire x_isAdd = x_opcode == 4'b0000;
     wire x_isSub = x_opcode == 4'b0001;
@@ -83,6 +87,25 @@ module fetch_to_wb_pipe(input clk,
     wire x_stall;
     wire x_stuck;
     wire x_read_val = x_ra_val;
+
+    //handle arithmetic
+    //TODO: handle overflow and modulo later
+    wire [15:0]x_add_result = x_ra_val + x_rx_val;
+    wire [15:0]x_sub_result = x_ra_val - x_rx_val;
+    wire [15:0]x_mul_result = x_ra_val * x_rx_val;
+    wire [15:0]x_div_result = x_ra_val / x_rx_val;
+
+    //handle movs with immediate values
+    wire [15:0]x_movl_result = {8{x_ival[7]}, x_ival};
+    wire [15:0]x_movh_result = {x_ival, x_rx_val};
+
+    //handle jumps
+    wire x_do_jmp = (x_is_jz) (x_ra_val == 16'h0) ? :
+                    (x_is_jnz) ? (x_ra_val != 16'h0) : 
+                    (x_is_js) ? (x_ra_val[15] == 1) :
+                    (x_is_jns) ? (x_ra_val[15] == 0) : 0;
+    
+    
 
     //here, we want to read from mem
     always @(posedge clk) begin
