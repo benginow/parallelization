@@ -15,12 +15,10 @@ module main();
     reg halt = 0;
     counter ctr(halt,clk);
 
-    //register file - 1 clock latency
-    //reads ra
-    wire [3:0]regRAddr0 = d_ra;
+    //scalar register file - 1 clock latency
+    wire [3:0]regRAddr0;
     wire [15:0]regData0;
-    //reads rx
-    wire [3:0]regRAddr1 = d_rx;
+    wire [3:0]regRAddr1;
     wire [15:0]regData1;
     wire regWEn;
     wire [3:0]regWAddr;
@@ -30,9 +28,10 @@ module main();
         regRAddr1, regData1,
         regWEn, regWAddr, regWData);
 
-    wire [3:0]vregRAddr0 = d_ra;
+    //vector register file - 1 clock latency
+    wire [3:0]vregRAddr0;
     wire [255:0]vregData0;
-    wire [3:0]vregRAddr1 = d_rx;
+    wire [3:0]vregRAddr1;
     wire [255:0]vregData1;
     wire vregWEn;
     wire [3:0]vregWAddr;
@@ -43,7 +42,7 @@ module main();
         vregWEn, vregWAddr, vregWData);
 
 
-    //instr mem
+    //instr mem - 2 clock latency
     wire [15:0]instr_mem_raddr;
     wire [15:0]instr_mem_data;
     assign instr_mem_raddr = f1_pc;
@@ -51,12 +50,9 @@ module main();
     instr_bank instr_mem(clk,
         instr_mem_raddr[15:1], instr_mem_data);
 
-    //a counter that keeps track of 
-    //TODO: import the counter module from last project
-    wire counter = 0;
-
-    /* Memory is split into 4 banks instead of 1 contiguous module
-        Bank X will hold addresses where address % 4 = X
+    /* Data Memory
+        - Split into 4 banks instead of 1 contiguous module
+        - Bank X will hold addresses where address % 4 = X
     */
     wire mem_bank_0_wen;
     wire[15:0] mem_bank_0_raddr;
@@ -87,7 +83,7 @@ module main();
     wire[15:0] mem_bank_3_data;
     wire[15:0] mem_bank_3_waddr;
     mem_bank3 mem(clk,
-        mem_bank_3_raddr[15:1], mem_bank_2_data,
+        mem_bank_3_raddr[15:1], mem_bank_3_data,
         mem_bank_3_wen, mem_bank_3_waddr[15:1], mem_bank_3_wdata);
     
     wire flush; //global control signal
@@ -118,6 +114,9 @@ module main();
     reg[15:0]d_pc = 16'hffff;
     reg d_valid <= 0;
     wire[15:0]d_ins = instr_mem_data;
+    reg [15:0]d_lastIns;
+    reg d_stallCycle = 0;
+    wire d_stall;
 
     wire [3:0]d_opcode = d_ins[15:12];
     wire [3:0]d_subcode = d_ins[7:4];
@@ -145,7 +144,6 @@ module main();
     
     wire d_isVadd = d_opcode == 4'b1000;
     wire d_isVsub = d_opcode == 4'b1001;
-    //just multiply each element
     wire d_isVmul = d_opcode == 4'b1010;
     wire d_isVdiv = d_opcode == 4'b1011;
 
@@ -159,24 +157,26 @@ module main();
     wire d_is_vector_op = d_isVadd || d_isVsub || d_isVmul || d_isVdiv 
                 || d_isVld || d_isVst || d_isVdot;
 
-    wire d_ra = d_ins[11:8];
+    wire d_ra = d_ins[11:8]; //always needed
     wire d_rb = d_ins[7:4];
     wire d_rt = d_ins[3:0];
-
+    //second register whose value is needed may be either rb or rt
     wire d_rx = (d_isAdd || d_isSub || d_isMul || d_isDiv) ||
             (d_isVadd || d_isVsub || d_isVmul || d_isVdiv) ?
             d_rb : d_rt;
 
-    reg [15:0]d_lastIns;
-    reg d_stallCycle = 0;
-    wire d_stall;
+    assign regRAddr0 = d_ra;
+    assign regRAddr1 = d_rx;
+    assign vregRAddr0 = d_ra;
+    assign vregRAddr1 = d_rx;
+
     always @(posedge clk) begin
         d_pc <= f2_pc;
         d_invalid <= f2_invalid;
         d_lastIns <= instr_mem_data;
     end
 
-     //================================FETCH REGS===========================================
+    //================================FETCH REGS===========================================
     wire [3:0]fr_opcode = fr_ins[15:12];
     wire [3:0]fr_subcode = fr_ins[7:4];
 
@@ -203,7 +203,6 @@ module main();
     
     wire fr_isVadd = fr_opcode == 4'b1000;
     wire fr_isVsub = fr_opcode == 4'b1001;
-    //just multiply each element
     wire fr_isVmul = fr_opcode == 4'b1010;
     wire fr_isVdiv = fr_opcode == 4'b1011;
 
@@ -218,9 +217,9 @@ module main();
                 || fr_isVld || fr_isVst || fr_isVdot;
 
 
+    //TODO: these should be regs i think
     wire[15:0] fr_ra_val;
     wire[15:0] fr_rx_val;
-    //we also need 
     
     //we want to stall by div 4 cycles
     //if its not divisible by 4 -> ?? TODO: fix
@@ -286,6 +285,8 @@ module main();
                             d_regData1, d_vregData0, d_vregData1,x2_ra_val, x2_rx_val, x2_stall, flush, x2_read_mem_addr,
                              x2_mem_WEn, x2_regData0, x2_regData1, x2_vregData0, x2_vregData1, x2_stall, x_flush, x2_read_mem_addr, 
                              x2_mem_WEn, x2_stallCycle, x2_ra, x2_rb, x2_rt, x2_rx ,pipe_1_result);
+    alu pipe_0(clk,
+        )
 
     //valid when it's a vector op and we want to continue doing the vector op
     //we need the vector length and then 
@@ -319,105 +320,6 @@ module main();
 
     //we need to keep updting the vector output
     //wire [255:0]fr_vector_output;
-
-    //================================EXECUTE 1===========================================
-    wire [3:0]x_opcode = x_ins[15:12];
-    wire [3:0]x_subcode = x_ins[7:4];
-
-    wire [7:0]x_imm = x_ins[11:4];
-
-    reg x_valid = 0;
-    reg [15:0]x_pc;
-    reg [15:0]x_ins;
-    reg [3:0]x_opcode;
-    reg [3:0]x_subcode;
-
-    reg x_ra;
-    reg x_rb;
-    reg x_rt;
-
-    reg x_rx;
-
-    reg x_stallCycle;
-
-    wire x_stall;
-    wire x_stuck;
-    wire x_read_val = x_ra_val;
-
-    //handle arithmetic
-    //TODO: handle overflow and modulo later
-    wire x_add_result = x_ra_val + x_rx_val;
-    wire x_sub_result = x_ra_val - x_rx_val;
-    wire x_mul_result = x_ra_val * x_rx_val;
-    wire x_div_result = x_ra_val / x_rx_val;
-
-    wire x_movl_result = {8{x_imm[7]}, x_imm};
-    wire x_movh_result = ();
-    
-    wire x_do_jmp = (x_is_jz) (x_ra_val == 16'h0) ? :
-                    (x_is_jnz) ? (x_ra_val != 16'h0) : 
-                    (x_is_js) ? (x_ra_val[15] == 1) :
-                    (x_is_jns) ? (x_ra_val[15] == 0) : 0;
-    
-    
-
-    //here, we want to read from mem
-    always @(posedge clk) begin
-        x_valid <= d_valid;
-        x_pc <= d_pc;
-        x_ins <= d_ins;
-        x_opcode <= d_opcode;
-        x_subcode <= d_subcode;
-
-        x_ra <= d_ra;
-        x_rb <= d_ra;
-        x_rt <= d_rt;
-
-        x_rx <= d_rx;
-
-        //TODO: logic to set stallCycle
-    end
-
-
-
-    //================================EXECUTE 2===========================================
-    
-
-    wire x2_valid = 0;
-    reg [15:0]x2_pc;
-    reg [15:0]x2_ins;
-    reg [3:0]x2_opcode;
-    reg [3:0]x2_subcode;
-
-    reg x2_ra;
-    reg x2_rb;
-    reg x2_rt;
-
-    reg x2_rx;
-
-    reg[15:0] x2_ra_val;
-    reg[15:0] x2_rx_val;
-
-    reg x2_stallCycle;
-
-    wire x2_stall;
-    wire x2_stuck;
-    //fetch 2, percolate all down
-    always @(posedge clk) begin
-        x2_valid <= x_valid;
-        x2_pc <= x_pc;
-        x2_ins <= x_ins;
-        x2_opcode <= x_opcode;
-        x2_subcode <= x_subcode;
-        x2_ra <= x_ra;
-        x2_rb <= x_ra;
-        x2_rt <= x_rt;
-
-        x2_rx <= x_rx;
-
-        x2_ra_val <= x_ra_val;
-        x2_rx_val <= x_rx_val;
-    end
 
     //================================COALESCE============================================
     wire [3:0]c_opcode = c_ins[15:12];
@@ -487,19 +389,19 @@ module main();
         //if write enable, then write it
 
         c_valid <= x2_valid;
-    c_pc <= x2_pc;
-    c_ins <= x2_ins;
-    c_opcode <= x2_opcode;
-    c_subcode <= x2_subcode;
+        c_pc <= x2_pc;
+        c_ins <= x2_ins;
+        c_opcode <= x2_opcode;
+        c_subcode <= x2_subcode;
 
-    c_ra <= x2_ra;
-    c_rb <= x2_ra;
-    c_rt <= x2_rt;
+        c_ra <= x2_ra;
+        c_rb <= x2_ra;
+        c_rt <= x2_rt;
 
-    c_rx <= x2_rx;
+        c_rx <= x2_rx;
 
-    c_ra_val <= x2_ra_val;
-    c_rx_val <= x2_rx_val;
+        c_ra_val <= x2_ra_val;
+        c_rx_val <= x2_rx_val;
 
         c_scalar_output = pipe_0_output;
         c_new_vector[pipe_0_curr_target + 15 : pipe_0_curr_target] <= pipe_0_output;

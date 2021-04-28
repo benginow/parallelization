@@ -26,7 +26,6 @@ module vregs(input clk,
     assign rLen0 = dataLen[rAddr0];
     assign rLen1 = dataLen[rAddr1];
 
-    //wire wBitNum = wind * 16;
     always @(posedge clk) begin
         if (wEn) begin
             data[wAddr] <= wData;

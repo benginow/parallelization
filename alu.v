@@ -3,7 +3,7 @@
 //we need to pass in all of the variables from decode?
 //maybe not...
 //read mem in fr
-module fetch_to_wb_pipe(input clk,  
+module alu(input clk,  
     input fr_pc, input[15:0]fr_ins,
     input[15:0]fr_operand_1, input[15:0] fr_operand_2,
     input[15:0] x2_mem,
