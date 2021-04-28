@@ -77,11 +77,10 @@ module alu(input clk,
 
     //if it's a ld, we want to output the mem addr, in case we need
     //to coalesce it
-    x2_result = x2_is_ld ? x2_mem : x2_prev_result;
+    assign x2_result = x2_is_ld ? x2_mem : x2_prev_result;
 
     always @(posedge clk) begin
         x2_prev_result <= x_result;
-        //x2_take_jump <= x_take_jump;
         x2_ins <= x_ins;
     end
 

@@ -12,8 +12,8 @@
 //fart
 //this should take one clock cycle
 module vregs(input clk, 
-    input [3:0]rAddr0, output [255:0]rData0, output r_len0,
-    input [3:0]rAddr1, output [255:0]rData1, output r_len1,
+    input [3:0]rAddr0, output [255:0]rData0, output[3:0] r_len0,
+    input [3:0]rAddr1, output [255:0]rData1, output[3:0] r_len1,
     input wEn, input [3:0]wAddr, input[3:0]wLen, input[255:0]wData);
 
     //we can store 16 8x8 matrices
