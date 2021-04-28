@@ -55,24 +55,24 @@ module alu(input clk,
                         (x_isJns) ? (!x_operand_1[15] ? x_operand_2 : x_pc+2):
                         (x_isSt) ? x_operand_1:0;
 
-    wire x_take_jump =  (x_isJz) ? (x_operand_1 == 0 ? 1 :0):
-                        (x_isJnz) ? (x_operand_1 != 0 ? 1 : 0):
-                        (x_isJs) ? (x_operand_1[15] ? 1 : 0):
-                        (x_isJns) ? (!x_operand_1[15] ? 1 : 0):0;
+    // wire x_take_jump =  (x_isJz) ? (x_operand_1 == 0 ? 1 :0):
+    //                     (x_isJnz) ? (x_operand_1 != 0 ? 1 : 0):
+    //                     (x_isJs) ? (x_operand_1[15] ? 1 : 0):
+    //                     (x_isJns) ? (!x_operand_1[15] ? 1 : 0):0;
     
     always @(posedge clk) begin
         x_ins <= fr_ins;
-        x_operand_1 <= fr_operand_1; //QUESTION: should this be percolated?
+        x_operand_1 <= fr_operand_1;
+        x_operand_2 <= fr_operand_2;
         x_pc <= fr_pc;
     end
 
     //===================EXECUTE 2=======================
     //memory fetch received, so we can just output that as needed
-
     
     reg[3:0] x2_opcode;
     reg[15:0] x2_prev_result;
-    reg x2_take_jump;
+    //reg x2_take_jump;
     wire x2_is_ld = x2_opcode === 4'b0111;
 
     //if it's a ld, we want to output the mem addr, in case we need
@@ -81,7 +81,7 @@ module alu(input clk,
 
     always @(posedge clk) begin
         x2_prev_result <= x_result;
-        x2_take_jump <= x_take_jump;
+        //x2_take_jump <= x_take_jump;
         x2_ins <= x_ins;
     end
 
