@@ -164,6 +164,15 @@ module main();
 
     wire d_is_halt = d_opcode == 4'1111;
     
+    wire d_is_vector_op = d_is_vadd || d_is_vsub || d_is_vmul || d_is_vdiv || d_is_vld || d_is_vst || d_is_vdot;
+
+    wire[3:0] d_ra = d_ins[11:8];
+    wire[3:0] d_rb = d_ins[7:4];
+    wire[3:0] d_rt = d_ins[3:0];
+
+    wire d_rx = (d_is_add || d_is_sub || d_is_mul || d_is_div) ||
+            (d_is_vadd || d_is_vsub || d_is_vmul || d_is_vdiv) ?
+            d_rb : d_rt;
 
 
 
