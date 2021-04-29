@@ -340,12 +340,14 @@ module main();
     reg[15:0] x_ins;
     reg x_valid = 0;
     reg[3:0] x_ra;
+    reg[3:0] x_stall_cycles;
 
     reg[15:0] x2_pc;
     reg[15:0] x2_ins;
     reg x2_valid = 0; 
     reg[3:0] x2_rx;
     reg[3:0] x2_ra;
+    reg[3:0] x2_stall_cycles;
 
     always @(posedge clk) begin
         x_pc <= fr_pc;
@@ -354,6 +356,8 @@ module main();
         x_vra_len <= fr_vra_size;
         x2_vra_len <= x_vra_len;
         x2_valid <= x_valid && !flush;
+        x_stall_cycles <= fr_stall_cycles;
+        x2_stall_cycles <= x_stall_cycles;
     end
 
     //==========================COALESCE==========================
@@ -364,6 +368,11 @@ module main();
     reg [3:0]c_stall_cycle;
     wire [3:0]c_opcode = c_ins[15:12];
 
+    reg[15:0] c_pipe_0_result;
+    reg[15:0] c_pipe_1_result;
+    reg[15:0] c_pipe_2_result;
+    reg[15:0] c_pipe_3_result;
+
     wire c_is_vector_op;
 
     reg[15:0] c_temp_vector_0;
@@ -371,13 +380,132 @@ module main();
     reg[15:0] c_temp_vector_2;
     reg[15:0] c_temp_vector_3;
     reg[15:0] c_temp_vector_4;
-    reg[15:0] c_temp_vector_0;
-    reg[15:0] c_temp_vector_0;
-    reg[15:0] c_temp_vector_0;
-    reg[15:0] c_temp_vector_0;
-    reg[15:0] c_temp_vector_0;
+    reg[15:0] c_temp_vector_5;
+    reg[15:0] c_temp_vector_6;
+    reg[15:0] c_temp_vector_7;
+    reg[15:0] c_temp_vector_8;
+    reg[15:0] c_temp_vector_9;
+    reg[15:0] c_temp_vector_10;
+    reg[15:0] c_temp_vector_11;
+    reg[15:0] c_temp_vector_12;
+    reg[15:0] c_temp_vector_13;
+    reg[15:0] c_temp_vector_14;
+    reg[15:0] c_temp_vector_15;
+    reg[15:0] c_temp_vector_16;
 
 
+    always @(posedge clk) begin
+        if (c_stall) begin
+
+            c_temp_vector_0 <= c_stall_state === 0 ? c_pipe_0_result : c_temp_vector_0;
+            c_temp_vector_4 <= c_stall_state === 0 ? c_pipe_1_result : c_temp_vector_4;
+            c_temp_vector_8 <= c_stall_state === 0 ? c_pipe_2_result : c_temp_vector_8;
+            c_temp_vector_12 <= c_stall_state === 0 ? c_pipe_3_result : c_temp_vector_12;
+
+            c_temp_vector_1 <= c_stall_state === 1 ? c_pipe_0_result : c_temp_vector_1;
+            c_temp_vector_5 <= c_stall_state === 1 ? c_pipe_1_result : c_temp_vector_5;
+            c_temp_vector_9 <= c_stall_state === 1 ? c_pipe_2_result : c_temp_vector_9;
+            c_temp_vector_13 <= c_stall_state === 1 ? c_pipe_3_result : c_temp_vector_13;
+
+            c_temp_vector_2 <= c_stall_state === 2 ? c_pipe_0_result : c_temp_vector_2;
+            c_temp_vector_6 <= c_stall_state === 2 ? c_pipe_1_result : c_temp_vector_6;
+            c_temp_vector_10 <= c_stall_state === 2 ? c_pipe_2_result : c_temp_vector_10;
+            c_temp_vector_14 <= c_stall_state === 2 ? c_pipe_3_result : c_temp_vector_14;
+
+            c_temp_vector_3 <= c_stall_state === 3 ? c_pipe_0_result : c_temp_vector_3;
+            c_temp_vector_7 <= c_stall_state === 3 ? c_pipe_1_result : c_temp_vector_7;
+            c_temp_vector_11 <= c_stall_state === 3 ? c_pipe_2_result : c_temp_vector_11;
+            c_temp_vector_15 <= c_stall_state === 3 ? c_pipe_3_result : c_temp_vector_15;
+
+            c_valid <= x2_valid && !flush;
+            c_pc <= x2_pc;
+            c_ins = c_ins;
+
+            c_stall_cycle <= x2_stall_cycle;
+
+            c_pipe_0_result <= x2_pipe_0_result;
+            c_pipe_1_result <= x2_pipe_1_result;
+            c_pipe_2_result <= x2_pipe_2_result;
+            c_pipe_3_result <= x2_pipe_3_result;
+
+
+
+        end
+        
+    end
+
+    //==========================WRITEBACK==========================
+
+    wire[255:0] wb_vec_reg;
+    wire wb_vreg_mem_wen;
+
+    wire[3:0] wb_ra = d_ins[11:8];
+    wire[3:0] wb_rb = d_ins[7:4];
+    wire[3:0] wb_rt = d_ins[3:0];
+
+    wire wb_is_add = d_opcode == 4'b0000;
+    wire wb_is_sub = d_opcode == 4'b0001;
+    wire wb_is_mul = d_opcode == 4'b0010;
+    wire wb_is_div = d_opcode == 4'b0011;
+
+    wire wb_is_movl = d_opcode == 4'b0100;
+    wire wb_is_movh = d_opcode == 4'b0101;
+    wire wb_is_jmp = d_opcode == 4'b0110;
+
+    wire wb_is_jz = d_is_jmp && d_subcode == 0;
+    wire wb_is_jnz = d_is_jmp && d_subcode == 1;
+    wire wb_is_js = d_is_jmp && d_subcode == 2;
+    wire wb_is_jns = d_is_jmp && d_subcode == 3;
+
+    wire wb_is_scalar_mem = d_opcode == 4'b0100;
+    wire wb_is_mem = (d_isScalarMem) || 
+                (d_opcode == 4'b1100) ||
+                (d_opcode == 4'b1101);
+    wire wb_is_ld = d_is_mem && d_subcode == 0;
+    wire wb_is_st = d_is_mem && d_subcode == 1;
+    
+    wire wb_is_vadd = d_opcode == 4'b1000;
+    wire wb_is_vsub = d_opcode == 4'b1001;
+    wire wb_is_vmul = d_opcode == 4'b1010;
+    wire wb_is_vdiv = d_opcode == 4'b1011;
+
+    wire wb_is_vld = d_opcode == 4'b1110;
+    wire wb_is_vst = d_opcode == 4'b1101;
+
+    wire wb_is_vdot = d_opcode == 4'1110;
+
+    wire wb_is_halt = d_opcode == 4'1111;
+    
+    wire wb_is_vector_op = wb_is_vadd || wb_is_vsub || wb_is_vmul || wb_is_vdiv || wb_is_vld || wb_is_vst || wb_is_vdot;
+
+    wire wb_take_jump =  (wb_isJz) ? (wb_ra == 0 ? 1 :0):
+                        (wb_isJnz) ? (wb_ra != 0 ? 1 : 0):
+                        (wb_isJs) ? (wb_ra[15] ? 1 : 0):
+                        (wb_isJns) ? (!wb_ra[15] ? 1 : 0) : 0;
+
+    wire wb_stall = wb_is_vst;
+    assign flush = (wb_valid && wb_take_jump);
+
+
+
+    always @(posedge clk) begin
+        if (c_stall) begin
+            wb_vec_reg <= {c_temp_vector_0, c_temp_vector_1, c_temp_vector_2, 
+                            c_temp_vector_3, c_temp_vector_4, c_temp_vector_5, 
+                            c_temp_vector_6, c_temp_vector_7, c_temp_vector_8, 
+                            c_temp_vector_9, c_temp_vector_10, c_temp_vector_11, 
+                            c_temp_vector_12, c_temp_vector_13, c_temp_vector_14, 
+                            c_temp_vector_15}
+
+            wb_ra_val <= c_temp_vector_0;
+
+
+
+
+
+        end
+        
+    end
 
 
 endmodule

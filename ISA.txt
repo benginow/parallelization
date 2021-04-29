@@ -29,8 +29,8 @@ encoding          instruction       description
 1010aaaabbbbtttt  vmul vrt,vra,vrb  vregs[t] = vregs[a] * vregs[b]
 1011aaaabbbbtttt  vdiv vrt,vra,vrb  vregs[t] = vregs[a] / vregs[b]
 
-1100aaaaiiiitttt  vld vrt,vra,$imm  vregs[t] = mem[regs[a]] : mem[regs[a] + $imm]
-1101aaaaiiiitttt  vst vrt,vra,$imm  mem[regs[a]] : mem[regs[a] + $imm] = vregs[t]
+1100aaaaiiiitttt  vld vrt,vra,$imm  vregs[t] = mem[regs[a]] : mem[regs[a] + $imm + 1]
+1101aaaaiiiitttt  vst vrt,vra,$imm  mem[regs[a]] : mem[regs[a] + $imm + 1] = vregs[t]
 
 1110aaaabbbbtttt  vdot rt,vra,vrb   regs[t] = vregs[a] DOTPRODUCT vregs[b]
 

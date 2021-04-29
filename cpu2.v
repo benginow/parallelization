@@ -228,11 +228,8 @@ module main();
                 || fr_isVld || fr_isVst || fr_isVdot;
 
     
-    //we want to stall by div 4 cycles
-    //if its not divisible by 4 -> ?? TODO: fix
-    //stalling logic
-    reg [3:0]fr_stallState = 0; //0 = not stalling, 1 = final stall cycle, 2 = 2nd final...
-    wire[2:0] fr_num_stall_cycles = fr_vra_size << 2 + fr_vra_size[1:0]; //TODO check sizes
+    reg [2:0]fr_stallState = 0; //0 = not stalling, 1 = final stall cycle, 2 = 2nd final...
+    wire[1:0] fr_num_stall_needed = fr_vra_len - >> 2 + fr_vra_len[1:0]; //TODO check sizes
     wire fr_stall_signal = (fr_stallState === 1 || fr_stallState !== 0); 
     
     //values percolated from decode
@@ -244,7 +241,7 @@ module main();
     wire[15:0] fr_rx_val = regData1;
 
     //TODO: vregs size functionality
-    wire[2:0] fr_vra_size = vregData0Len;
+    wire[2:0] fr_vra_len = vregData0Len;
     wire[255:0] fr_vra_val = vregData0;
     wire[2:0] fr_vrx_size = vregData1Len;
     wire[255:0] fr_vrx_val = vregData1;
@@ -386,15 +383,28 @@ module main();
     //============================EXECUTE/EXECUTE2========================================
     // ALU in fr does computation, this percolates pc and vector lengths
     reg [15:0] x_pc;
-    reg [15:0] x2_pc;
+    reg [15:0] x_ins;
+    reg [15:0] x_valid;
     reg [15:0] x_vra_len;
+    
+    reg [15:0] x2_pc;
+    reg [15:0] x2_ins;
+    reg [15:0] x2_valid;
     reg [15:0] x2_vra_len;
+    // reg [15:0] x2_ra_val;
+    // reg [15:0] x2_rx_val
 
     always @(posedge clk) begin
         x_pc <= fr_pc;
+        x_ins <= fr_ins;
+        x_valid <= fr_valid;
+        x_vra_len <= fr_vra_len;
+
         x2_pc <= x_pc;
-        x_vra_len <= fr_vra_size;
+        x2_ins <= x_ins;
+        x2_valid <= x_valid && !wb_flush;
         x2_vra_len <= x_vra_len;
+        x2_ra_val <= x_ra_val
     end
 
     //================================COALESCE============================================
@@ -448,13 +458,14 @@ module main();
     wire[3:0] pipe_2_curr_target;
     wire[3:0] pipe_3_curr_target;
 
-    reg[15:0] c_ra_val;
-    reg[15:0] c_rx_val;
+    // reg[15:0] c_ra_val;
+    // reg[15:0] c_rx_val;
 
     // reg[15:0] c_pipe_0_result;
     // reg[15:0] c_pipe_1_result;
     // reg[15:0] c_pipe_2_result;
     // reg[15:0] c_pipe_3_result;
+
 
     //handle dot product
     //Design decision: vector length
@@ -487,9 +498,10 @@ module main();
         c_pipe_2_result <= x2_pipe_2_result;
         c_pipe_3_result <= x2_pipe_3_result;
 
-    
-        c_ra_val <= x2_ra_val;
-        c_rx_val <= x2_rx_val;
+
+        //Do we need these?
+        // c_ra_val <= x2_ra_val;
+        // c_rx_val <= x2_rx_val;
 
         c_scalar_output = c_pipe_0_result;
         c_new_vector[pipe_0_curr_target + 15 : pipe_0_curr_target] <= c_pipe_0_result;
