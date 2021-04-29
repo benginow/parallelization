@@ -1,0 +1,65 @@
+this tests all the vector operations
+
+loop through and create 3 ten length vectors
+two of them store 1 through 10 while the other stores all operations
+Stored at 0x100, 0x700, 0x1500
+
+
+movl r1,1
+movl r2,10
+movl r4,1
+movl r5,0
+movh r5,1
+movl r3,0
+movh r3,7
+movl r7,0
+movh r7,15
+movl r6, 20
+st r5, r4
+st r3, r4
+st r7, r1
+sub r2, r2, r1
+add r4, r4, r1
+add r5, r5, r1
+add r3, r3, r1
+add r7, r7, r1
+jnz r2, r6
+
+
+//load our vectors in
+//vr1 and vr2 is 1 through 10
+//vr3 is all 1's
+movl r5,0
+movl r3,0
+movl r7,0
+vld vr1, r5, 10
+vld vr2, r3, 10
+vld vr3, r7, 10
+
+//test addition
+vadd vr4, vr1, vr2
+
+//test subtraction
+vdot r0, vr3, vr4 //should be 55 sum from 1 to 10
+vsub vr4, vr2, vr3
+vdot r0, vr3, vr4 //should be 45 sum from 0 to 9
+
+//test multiplication
+vmul vr4, vr1, vr2
+vdot r10, vr4, vr3 //should be 385
+movl r8, 5
+movh r8, 0
+div r0, r10, r8 //should be 77
+
+//test division
+vdiv vr4, vr1, vr2
+vdot r9, vr4, vr3 //should be one
+movl r11, 48
+movh r11, 0
+add r0, r9, r11 //add 48 to it should be '1'
+HALT
+
+
+
+
+
