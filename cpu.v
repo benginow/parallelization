@@ -174,6 +174,184 @@ module main();
             (d_is_vadd || d_is_vsub || d_is_vmul || d_is_vdiv) ?
             d_rb : d_rt;
 
+    assign reg_raddr0 = d_ra;
+    assign reg_raddr1 = d_rx;
+    assign vreg_raddr0 = d_ra;
+    assign vreg_raddr0 = d_ra;
+
+    always @(posedge clk) begin
+        //if we're stalling, we don't want to percolate any vals down
+        if (!d_stall) begin
+            d_pc <= f2_pc;
+            //if we aren't flushing, and if the previous isn't valid
+            d_valid <= f2_valid && !flush;
+            d_last_ins <= d_ins;
+        end
+    end
+
+    //==========================FETCH REGS==========================
+    //uhhhh.. unsure if this stall logic is correct
+    reg[3:0] fr_stall_state = 0;
+    wire[2:0] fr_num_stall_cycles = fr_is_vector_op ? fr_vra_size << 2 + fr_vra_size[1:0] : 0;
+    wire fr_stall = (fr_stall_state === 1) || (fr_stall_state !== 0) || (fr_num_stall_cycles != 0);
+
+    reg fr_valid = 0;
+    reg fr_pc;
+    reg fr_ins;
+
+    reg fr_ra;
+    reg fr_rx;
+
+    //we don't care too much about decoding everything
+    reg fr_is_vector_op;
+
+    wire[15:0] fr_ra_val = reg_data0;
+    wire[15:0] fr_rx_val = reg_data1;
+
+    wire[2:0] fr_vra_size = vreg_len0;
+    wire[2:0] fr_vrx_size = vreg_len0;
+    wire[255:0] fr_vra_val = vreg_data0;
+    wire[255:0] fr_vrx_val = vreg_data1;
+
+    always @(posedge clk) begin
+        fr_stall_state <= fr_is_vector_op ? fr_num_stall_cycles - 1 : 0;
+        if (!fr_stall) begin
+            fr_valid <= d_valid && !flush;
+            fr_pc <= d_pc;
+            fr_ins <= d_ins;
+            fr_is_vector_op <= d_is_vector_op;
+            
+            fr_ra <= d_ra;
+            fr_rx <= d_rx;
+        end
+    end
+
+    //we need to split up our items from the vregs when pipelining
+    wire [15:0]vra_entry0 = fr_vra_val[255:240];
+    wire [15:0]vra_entry1 = fr_vra_val[239:224];
+    wire [15:0]vra_entry2 = fr_vra_val[223:208];
+    wire [15:0]vra_entry3 = fr_vra_val[207:192];
+    wire [15:0]vra_entry4 = fr_vra_val[191:176];
+    wire [15:0]vra_entry5 = fr_vra_val[175:160];
+    wire [15:0]vra_entry6 = fr_vra_val[159:144];
+    wire [15:0]vra_entry7 = fr_vra_val[143:128];
+    wire [15:0]vra_entry8 = fr_vra_val[127:112];
+    wire [15:0]vra_entry9 = fr_vra_val[111:96];
+    wire [15:0]vra_entry10 = fr_vra_val[95:80];
+    wire [15:0]vra_entry11 = fr_vra_val[79:64];
+    wire [15:0]vra_entry12 = fr_vra_val[63:48];
+    wire [15:0]vra_entry13 = fr_vra_val[47:32];
+    wire [15:0]vra_entry14 = fr_vra_val[31:16];
+    wire [15:0]vra_entry15 = fr_vra_val[15:0];
+
+    wire [15:0]vrx_entry0 = fr_vrx_val[255:240];
+    wire [15:0]vrx_entry1 = fr_vrx_val[239:224];
+    wire [15:0]vrx_entry2 = fr_vrx_val[223:208];
+    wire [15:0]vrx_entry3 = fr_vrx_val[207:192];
+    wire [15:0]vrx_entry4 = fr_vrx_val[191:176];
+    wire [15:0]vrx_entry5 = fr_vrx_val[175:160];
+    wire [15:0]vrx_entry6 = fr_vrx_val[159:144];
+    wire [15:0]vrx_entry7 = fr_vrx_val[143:128];
+    wire [15:0]vrx_entry8 = fr_vrx_val[127:112];
+    wire [15:0]vrx_entry9 = fr_vrx_val[111:96];
+    wire [15:0]vrx_entry10 = fr_vrx_val[95:80];
+    wire [15:0]vrx_entry11 = fr_vrx_val[79:64];
+    wire [15:0]vrx_entry12 = fr_vrx_val[63:48];
+    wire [15:0]vrx_entry13 = fr_vrx_val[47:32];
+    wire [15:0]vrx_entry14 = fr_vrx_val[31:16];
+    wire [15:0]vrx_entry15 = fr_vrx_val[15:0];
+
+    wire[15:0] pipe_0_ra_val = fr_is_vector_op ?
+                               (fr_stall_state == 0 ? vra_entry0:
+                                fr_stall_state == 1 ? vra_entry4:
+                                fr_stallState == 2 ? vra_entry8:
+                                fr_stallState == 3 ? vra_entry12 : 0): fr_ra_val;
+    wire[15:0] pipe_0_rx_val = fr_is_vector_op ? 
+                               (fr_stallState == 0 ? vrx_entry0:
+                                fr_stallState == 1 ? vrx_entry4:
+                                fr_stallState == 2 ? vrx_entry8:
+                                fr_stallState == 3 ? vrx_entry12 : 0): fr_rx_val;
+
+    //this is the ra val we want to percolate for scalars
+    wire[15:0] 
+    wire[15:0] x2_mem_0 = mem_bank_0_data;
+    wire[15:0] x2_pipe_0_result;
+    //we haven't quite dealt with this yet
+    wire[15:0] x2_overflow_0;
+    wire x2_valid;
+    wire 
+
+    alu pipe_0(clk, flush, fr_valid, fr_pc, fr_ins, pipe_0_ra_val, pipe_0_rx_val,
+        x2_mem_0, x2_pipe_0_result, x2_overflow_0, x2_valid, x2_ins, x2_pc,
+        x2_ra_val_0, x2_rx_val_0, x2_rx);
+
+    wire[15:0] pipe_1_ra_val = fr_is_vector_op ? 
+                               (fr_stallState == 0 ? vra_entry1:
+                                fr_stallState == 1 ? vra_entry5:
+                                fr_stallState == 2 ? vra_entry10:
+                                fr_stallState == 3 ? vra_entry13:0): fr_ra_val;
+    wire[15:0] pipe_1_rx_val = fr_is_vector_op ? 
+                               (fr_stallState == 0 ? vrx_entry1:
+                                fr_stallState == 1 ? vrx_entry5:
+                                fr_stallState == 2 ? vrx_entry10:
+                                fr_stallState == 3 ? vrx_entry13:0): fr_ra_val;
+
+    wire pipe_1_valid = fr_is_vector_op;
+    wire[15:0] x2_pipe_1_result;
+    wire[15:0] x2_mem_1 = mem_bank_1_data;
+    wire[15:0] x2_overflow_1;
+
+    alu pipe_1(clk, fr_pc, fr_ins, pipe_1_ra_val, pipe_1_rx_val,
+        x2_mem_1, x2_pipe_1_result, x2_overflow_1);
+
+    wire[15:0] pipe_2_ra_val = fr_is_vector_op ? 
+                               (fr_stallState == 0 ? vra_entry2:
+                                fr_stallState == 1 ? vra_entry6:
+                                fr_stallState == 2 ? vra_entry11:
+                                fr_stallState == 3 ? vra_entry14:0): fr_ra_val;
+    wire[15:0] pipe_2_rx_val = fr_is_vector_op ? 
+                               (fr_stallState == 0 ? vrx_entry2:
+                                fr_stallState == 1 ? vrx_entry6:
+                                fr_stallState == 2 ? vrx_entry11:
+                                fr_stallState == 3 ? vrx_entry14:0): fr_ra_val;
+
+    wire pipe_2_valid = fr_is_vector_op;
+    wire[15:0] x2_pipe_2_result;
+    wire[15:0] x2_mem_2 = mem_bank_2_data;
+    wire[15:0] x2_overflow_2;
+    alu pipe_2(clk, flush, fr_ins, pipe_2_ra_val, pipe_2_rx_val,    
+        x2_mem_2, x2_pipe_2_result, x2_overflow_2, x2_valid, x2_ins, x2_pc);
+
+    wire[15:0] pipe_3_ra_val = fr_is_vector_op ? 
+                               (fr_stallState == 0 ? vra_entry3:
+                                fr_stallState == 1 ? vra_entry7:
+                                fr_stallState == 2 ? vra_entry12:
+                                fr_stallState == 3 ? vra_entry15:0): fr_ra_val;
+    wire[15:0] pipe_3_rx_val = fr_is_vector_op ? 
+                               (fr_stallState == 0 ? vrx_entry3:
+                                fr_stallState == 1 ? vrx_entry7:
+                                fr_stallState == 2 ? vrx_entry12:
+                                fr_stallState == 3 ? vrx_entry15:0): fr_ra_val;
+    
+
+    //==========================EXECUTE/EXECUTE2==========================
+
+    reg[15:0] x_pc;
+    reg[15:0] x_ins;
+    reg x_valid;
+    reg[3:0] x_rx;
+    reg[3:0] x_ra;
+
+    reg[15:0] x2_pc;
+    reg[15:0] x2_ins;
+    reg x2_valid; 
+    reg[3:0] x2_rx;
+    reg
+
+    
+
+
+
 
 
 endmodule
