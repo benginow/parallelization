@@ -167,9 +167,9 @@ module main();
     wire d_is_vector_op = d_isVadd || d_isVsub || d_isVmul || d_isVdiv 
                 || d_isVld || d_isVst || d_isVdot;
 
-    wire d_ra = d_ins[11:8]; //always needed
-    wire d_rb = d_ins[7:4];
-    wire d_rt = d_ins[3:0];
+    wire[3:0] d_ra = d_ins[11:8]; //always needed
+    wire[3:0] d_rb = d_ins[7:4];
+    wire[3:0] d_rt = d_ins[3:0];
     //second register whose value is needed may be either rb or rt
     wire d_rx = (d_isAdd || d_isSub || d_isMul || d_isDiv) ||
             (d_isVadd || d_isVsub || d_isVmul || d_isVdiv) ?
@@ -240,7 +240,6 @@ module main();
     reg [15:0]fr_pc;
     reg [15:0]fr_ins;
 
-
     wire[15:0] fr_ra_val = regData0;
     wire[15:0] fr_rx_val = regData1;
 
@@ -260,14 +259,6 @@ module main();
         fr_pc <= d_pc;
         fr_ins <= d_ins;
 
-        fr_ra <= d_ra;
-        fr_rb <= d_ra;
-        fr_rt <= d_rt;
-
-        fr_rx <= d_rx;
-
-        fr_rx_val <= d_rx_val;
-        fr_ra_val <= d_ra_val;
     end
 
     // we will have four pipelines
@@ -460,10 +451,10 @@ module main();
     reg[15:0] c_ra_val;
     reg[15:0] c_rx_val;
 
-    reg[15:0] c_pipe_0_result;
-    reg[15:0] c_pipe_1_result;
-    reg[15:0] c_pipe_2_result;
-    reg[15:0] c_pipe_3_result;
+    // reg[15:0] c_pipe_0_result;
+    // reg[15:0] c_pipe_1_result;
+    // reg[15:0] c_pipe_2_result;
+    // reg[15:0] c_pipe_3_result;
 
     //handle dot product
     //Design decision: vector length
@@ -491,20 +482,20 @@ module main();
         c_pc <= x2_pc;
         c_ins <= x2_ins;
 
-        c_ra <= x2_ra;
-        c_rb <= x2_ra;
-        c_rt <= x2_rt;
+        c_pipe_0_result <= x2_pipe_0_result;
+        c_pipe_1_result <= x2_pipe_1_result;
+        c_pipe_2_result <= x2_pipe_2_result;
+        c_pipe_3_result <= x2_pipe_3_result;
 
-        c_rx <= x2_rx;
-
+    
         c_ra_val <= x2_ra_val;
         c_rx_val <= x2_rx_val;
 
-        c_scalar_output = pipe_0_output;
-        c_new_vector[pipe_0_curr_target + 15 : pipe_0_curr_target] <= pipe_0_output;
-        c_new_vector[pipe_1_curr_target + 15 : pipe_1_curr_target] <= pipe_1_output;
-        c_new_vector[pipe_2_curr_target + 15 : pipe_2_curr_target] <= pipe_2_output;
-        c_new_vector[pipe_3_curr_target + 15 : pipe_3_curr_target] <= pipe_3_output;
+        c_scalar_output = c_pipe_0_result;
+        c_new_vector[pipe_0_curr_target + 15 : pipe_0_curr_target] <= c_pipe_0_result;
+        c_new_vector[pipe_1_curr_target + 15 : pipe_1_curr_target] <= c_pipe_1_result;
+        c_new_vector[pipe_2_curr_target + 15 : pipe_2_curr_target] <= c_pipe_2_result;
+        c_new_vector[pipe_3_curr_target + 15 : pipe_3_curr_target] <= c_pipe_3_result;
     end
 
     //================================WRITEBACK===========================================
@@ -572,16 +563,12 @@ module main();
     reg wb_valid = 0;
     reg [15:0]wb_pc;
     reg [15:0]wb_ins;
-
-    reg[3:0] wb_ra;
-    reg[3:0] wb_rb;
-    reg[3:0] wb_rt;
-
-    reg[3:0] wb_rx;
-
-    // reg[15:0] wb_ra_val;
-    // reg[15:0] wb_rx_val;
+    reg[15:0] wb_ra_val;
+    reg[15:0] wb_rx_val;
     
+    wire[3:0] wb_ra = d_ins[11:8]; //always needed
+    wire[3:0] wb_rb = d_ins[7:4];
+    wire[3:0] wb_rt = d_ins[3:0];
 
     reg wb_stallCycle;
     
@@ -591,10 +578,10 @@ module main();
     wire wb_stall = wb_isVst;
     wire wb_stuck;
 
-    wire wb_take_jump =  (x_isJz) ? (x_operand_1 == 0 ? 1 :0):
-                        (x_isJnz) ? (x_operand_1 != 0 ? 1 : 0):
-                        (x_isJs) ? (x_operand_1[15] ? 1 : 0):
-                        (x_isJns) ? (!x_operand_1[15] ? 1 : 0) : 0;
+    wire wb_take_jump =  (wb_isJz) ? (wb_ra == 0 ? 1 :0):
+                        (wb_isJnz) ? (wb_ra != 0 ? 1 : 0):
+                        (wb_isJs) ? (wb_ra[15] ? 1 : 0):
+                        (wb_isJns) ? (!wb_ra[15] ? 1 : 0) : 0;
     
     //TODO: deal with read after writes maybe?
     assign wb_flush = wb_take_jump && wb_valid;
@@ -612,12 +599,6 @@ module main();
         wb_pc <= c_pc;
         wb_ins <= c_ins;
 
-        wb_ra <= c_ra;
-        wb_rb <= c_ra;
-        wb_rt <= c_rt;
-
-        wb_rx <= c_rx;
-
         wb_ra_val <= c_ra_val;
         wb_rx_val <= c_rx_val;
 
@@ -628,18 +609,18 @@ module main();
             end
 
             if (wb_is_print) begin
-                print("%c", result);
+                $display("%c", result);
             end
 
             if(wb_take_jump) begin
-                pc <= result;
+                f1_pc <= result;
             end
         end
 
         
 
         if(!(wb_flush && wb_valid)) begin
-            pc <= pc+2;
+            f1_pc <= f1_pc+2;
         end
 
 

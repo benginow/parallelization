@@ -3,11 +3,13 @@
 //we need to pass in all of the variables from decode?
 //maybe not...
 //read mem in fr
-module alu(input clk,  
-    input [15:0]fr_pc, input[15:0]fr_ins,
+module alu(input clk, input flush, input fr_valid,   
+    input[15:0]fr_ins,
     input[15:0]fr_operand_1, input[15:0] fr_operand_2,
     input[15:0] x2_mem,
-    output[15:0] x2_result, output[15:0] overflow_mod);
+    output[15:0] x2_result, output[15:0] x2_overflow_mod,
+    output x2_valid, output[15:0] x2_ins,
+    output[15:0] x2_operand_1, output[15:0] x2_operand_2);
 
     //===================EXECUTE 1=======================
     //waiting for memory fetch
@@ -67,6 +69,7 @@ module alu(input clk,
         x_operand_1 <= fr_operand_1;
         x_operand_2 <= fr_operand_2;
         x_pc <= fr_pc;
+        x_valid <= fr_valid && !flush;
     end
 
     //===================EXECUTE 2=======================
