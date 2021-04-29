@@ -338,18 +338,44 @@ module main();
 
     reg[15:0] x_pc;
     reg[15:0] x_ins;
-    reg x_valid;
-    reg[3:0] x_rx;
+    reg x_valid = 0;
     reg[3:0] x_ra;
 
     reg[15:0] x2_pc;
     reg[15:0] x2_ins;
-    reg x2_valid; 
+    reg x2_valid = 0; 
     reg[3:0] x2_rx;
-    reg
+    reg[3:0] x2_ra;
 
-    
+    always @(posedge clk) begin
+        x_pc <= fr_pc;
+        x2_pc <= x_pc;
+        x_valid <= fr_valid && !flush;
+        x_vra_len <= fr_vra_size;
+        x2_vra_len <= x_vra_len;
+        x2_valid <= x_valid && !flush;
+    end
 
+    //==========================COALESCE==========================
+
+    reg c_valid = 0;
+    reg [15:0]c_pc;
+    reg [3:0]c_ins;
+    reg [3:0]c_stall_cycle;
+    wire [3:0]c_opcode = c_ins[15:12];
+
+    wire c_is_vector_op;
+
+    reg[15:0] c_temp_vector_0;
+    reg[15:0] c_temp_vector_1;
+    reg[15:0] c_temp_vector_2;
+    reg[15:0] c_temp_vector_3;
+    reg[15:0] c_temp_vector_4;
+    reg[15:0] c_temp_vector_0;
+    reg[15:0] c_temp_vector_0;
+    reg[15:0] c_temp_vector_0;
+    reg[15:0] c_temp_vector_0;
+    reg[15:0] c_temp_vector_0;
 
 
 
