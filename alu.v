@@ -4,7 +4,7 @@
 //maybe not...
 //read mem in fr
 module alu(input clk,  
-    input fr_pc, input[15:0]fr_ins,
+    input [15:0]fr_pc, input[15:0]fr_ins,
     input[15:0]fr_operand_1, input[15:0] fr_operand_2,
     input[15:0] x2_mem,
     output[15:0] x2_result, output[15:0] overflow_mod);
@@ -19,6 +19,8 @@ module alu(input clk,
     wire [3:0]x_opcode = x_ins[15:12];
     wire [3:0]x_subcode = x_ins[7:4];
     
+    reg [15:0]x_operand_1;
+    reg [15:0]x_operand_2;
 
     wire x_isScalarMem = x_opcode == 4'b0100;
     wire x_isMem = (x_isScalarMem) || 
@@ -45,15 +47,15 @@ module alu(input clk,
             Store: output 
     */
 
-    wire[15:0] x_result = (x_is_div) ?  x_operand_1 / x_operand_2:
+    wire[15:0] x_result = (x_is_div) ?  x_operand_1 / x_operand_2 :
                         (x_is_sub) ? x_operand_1 - x_operand_2 :
                         (x_is_mul) ? x_operand_1 * x_operand_2 : 
-                        (x_is_add) ? x_operand_1 + x_operand_2: 
-                        (x_isJz) ? (x_operand_1 == 0 ? x_operand_2 : x_pc+2):
-                        (x_isJnz) ? (x_operand_1 != 0 ? x_operand_2 : x_pc+2):
-                        (x_isJs) ? (x_operand_1[15] ? x_operand_2 : x_pc+2):
-                        (x_isJns) ? (!x_operand_1[15] ? x_operand_2 : x_pc+2):
-                        (x_isSt) ? x_operand_1:0;
+                        (x_is_add) ? x_operand_1 + x_operand_2 : 
+                        (x_isJz) ? (x_operand_1 == 0 ? x_operand_2 : x_pc+2) :
+                        (x_isJnz) ? (x_operand_1 != 0 ? x_operand_2 : x_pc+2) :
+                        (x_isJs) ? (x_operand_1[15] ? x_operand_2 : x_pc+2) :
+                        (x_isJns) ? (!x_operand_1[15] ? x_operand_2 : x_pc+2) :
+                        (x_isSt) ? x_operand_1 : 0;
 
     // wire x_take_jump =  (x_isJz) ? (x_operand_1 == 0 ? 1 :0):
     //                     (x_isJnz) ? (x_operand_1 != 0 ? 1 : 0):
@@ -70,11 +72,13 @@ module alu(input clk,
     //===================EXECUTE 2=======================
     //memory fetch received, so we can just output that as needed
     
-    reg[3:0] x2_opcode;
+    reg [15:0] x2_pc;
+    reg [15:0] x2_ins;
+    wire[3:0] x2_opcode = x2_ins[15:12];
     reg[15:0] x2_prev_result;
     //reg x2_take_jump;
     wire x2_is_ld = x2_opcode === 4'b0111;
-
+    
     //if it's a ld, we want to output the mem addr, in case we need
     //to coalesce it
     assign x2_result = x2_is_ld ? x2_mem : x2_prev_result;
@@ -82,6 +86,7 @@ module alu(input clk,
     always @(posedge clk) begin
         x2_prev_result <= x_result;
         x2_ins <= x_ins;
+        x2_pc <= x_pc;
     end
 
 

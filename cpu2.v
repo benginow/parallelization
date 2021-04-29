@@ -92,18 +92,22 @@ module main();
         mem_bank_3_raddr[15:1], mem_bank_3_data,
         mem_bank_3_wen, mem_bank_3_waddr[15:1], mem_bank_3_wdata);
     
-    wire flush; //global control signal
+    wire wb_flush; //global control signal
     
     //=====================FETCH 1=====================
     reg[15:0]f1_pc = 0;
     reg f1_valid = 1;
     wire f1_stall = 0;
+
+    //The PC is incremented in the writeback stage
     always @(posedge clk) begin
-        //TODO: work on the flush logic!!
-        if (!f1_flush) begin
-            //if we're flushing, we don't want to keep incrementing
-            f1_pc <= f1_pc + 2;
-        end
+
+        // 
+        // //TODO: work on the flush logic!!
+        // if (!f1_flush) begin
+        //     //if we're flushing, we don't want to keep incrementing
+        //     f1_pc <= f1_pc + 2;
+        // end
     end 
 
     //=====================FETCH 2=====================
@@ -113,7 +117,7 @@ module main();
     always @(posedge clk) begin
         f2_pc <= f1_pc;
         //if f1 is an invalid wire, we want the next to be invalid
-        f2_invalid <= f1_flush ? 1 : f1_invalid;
+        f2_valid <= f1_valid && !wb_flush;
     end 
 
     //=====================DECODE======================
@@ -179,7 +183,7 @@ module main();
 
     always @(posedge clk) begin
         d_pc <= f2_pc;
-        d_invalid <= f2_invalid;
+        d_valid <= f2_valid && !wb_flush;
         d_lastIns <= instr_mem_data;
     end
 
@@ -227,7 +231,7 @@ module main();
     //we want to stall by div 4 cycles
     //if its not divisible by 4 -> ?? TODO: fix
     //stalling logic
-    reg [3:0]fr_stallState; //0 = not stalling, 1 = final stall cycle, 2 = 2nd final...
+    reg [3:0]fr_stallState = 0; //0 = not stalling, 1 = final stall cycle, 2 = 2nd final...
     wire[2:0] fr_num_stall_cycles = fr_vra_size << 2 + fr_vra_size[1:0]; //TODO check sizes
     wire fr_stall_signal = (fr_stallState === 1 || fr_stallState !== 0); 
     
@@ -252,7 +256,7 @@ module main();
         fr_stall_cycles <= fr_stall_cycles_temp - 1;
 
         //percolate values
-        fr_valid <= d_valid;
+        fr_valid <= d_valid  && !wb_flush;
         fr_pc <= d_pc;
         fr_ins <= d_ins;
 
@@ -267,10 +271,58 @@ module main();
     end
 
     // we will have four pipelines
+    wire [15:0]vra_entry0 = fr_vra_val[255:240];
+    wire [15:0]vra_entry1 = fr_vra_val[239:224];
+    wire [15:0]vra_entry2 = fr_vra_val[223:208];
+    wire [15:0]vra_entry3 = fr_vra_val[207:192];
+    wire [15:0]vra_entry4 = fr_vra_val[191:176];
+    wire [15:0]vra_entry5 = fr_vra_val[175:160];
+    wire [15:0]vra_entry6 = fr_vra_val[159:144];
+    wire [15:0]vra_entry7 = fr_vra_val[143:128];
+    wire [15:0]vra_entry8 = fr_vra_val[127:112];
+    wire [15:0]vra_entry9 = fr_vra_val[111:96];
+    wire [15:0]vra_entry10 = fr_vra_val[95:80];
+    wire [15:0]vra_entry11 = fr_vra_val[79:64];
+    wire [15:0]vra_entry12 = fr_vra_val[63:48];
+    wire [15:0]vra_entry13 = fr_vra_val[47:32];
+    wire [15:0]vra_entry14 = fr_vra_val[31:16];
+    wire [15:0]vra_entry15 = fr_vra_val[15:0];
+
+    wire [15:0]vrx_entry0 = fr_vrx_val[255:240];
+    wire [15:0]vrx_entry1 = fr_vrx_val[239:224];
+    wire [15:0]vrx_entry2 = fr_vrx_val[223:208];
+    wire [15:0]vrx_entry3 = fr_vrx_val[207:192];
+    wire [15:0]vrx_entry4 = fr_vrx_val[191:176];
+    wire [15:0]vrx_entry5 = fr_vrx_val[175:160];
+    wire [15:0]vrx_entry6 = fr_vrx_val[159:144];
+    wire [15:0]vrx_entry7 = fr_vrx_val[143:128];
+    wire [15:0]vrx_entry8 = fr_vrx_val[127:112];
+    wire [15:0]vrx_entry9 = fr_vrx_val[111:96];
+    wire [15:0]vrx_entry10 = fr_vrx_val[95:80];
+    wire [15:0]vrx_entry11 = fr_vrx_val[79:64];
+    wire [15:0]vrx_entry12 = fr_vrx_val[63:48];
+    wire [15:0]vrx_entry13 = fr_vrx_val[47:32];
+    wire [15:0]vrx_entry14 = fr_vrx_val[31:16];
+    wire [15:0]vrx_entry15 = fr_vrx_val[15:0];
+  
+
     //always valid
-    wire[3:0] pipe_0_target_index = (fr_stallState - 1)*4;
-    wire[15:0] pipe_0_ra_val = fr_is_vector_op ? fr_vra_val[pipe_0_target_index*16: (pipe_0_target_index+1)*16-1] : fr_va_val;
-    wire[15:0] pipe_0_rx_val = fr_is_vector_op ? fr_vrx_val[pipe_0_target_index*16: (pipe_0_target_index+1)*16-1] : fr_vx_val;
+    // wire[3:0] pipe_0_target_index = (fr_stallState - 1)*4;
+    // wire[15:0] pipe_0_ra_val = fr_is_vector_op ? fr_vra_val[pipe_0_target_index*16: (pipe_0_target_index+1)*16-1] : fr_ra_val;
+    // wire[15:0] pipe_0_rx_val = fr_is_vector_op ? fr_vrx_val[pipe_0_target_index*16: (pipe_0_target_index+1)*16-1] : fr_rx_val;
+    
+    
+    wire[15:0] pipe_0_ra_val = fr_is_vector_op ?
+                               (fr_stallState == 0 ? vra_entry0:
+                                fr_stallState == 1 ? vra_entry4:
+                                fr_stallState == 2 ? vra_entry8:
+                                fr_stallState == 3 ? vra_entry12 : 0): fr_ra_val;
+    wire[15:0] pipe_0_rx_val = fr_is_vector_op ? 
+                               (fr_stallState == 0 ? vrx_entry0:
+                                fr_stallState == 1 ? vrx_entry4:
+                                fr_stallState == 2 ? vrx_entry8:
+                                fr_stallState == 3 ? vrx_entry12 : 0): fr_rx_val;
+
     wire[15:0] x2_mem_0 = mem_bank_0_data;
     wire[15:0] x2_pipe_0_result;
     wire[15:0] x2_overflow_0;
@@ -279,35 +331,83 @@ module main();
 
     //valid when it's a vector op and we want to continue doing the vector op
     //we need the vector length and then 
-    wire[3:0] pipe_1_target_index = (fr_stallState-1)*4 + 1;
-    wire[15:0] pipe_1_target = fr_vra_val[pipe_1_target_index*16: (pipe_1_target_index+1)*16-1];
+    wire[15:0] pipe_1_ra_val = fr_is_vector_op ? 
+                               (fr_stallState == 0 ? vra_entry1:
+                                fr_stallState == 1 ? vra_entry5:
+                                fr_stallState == 2 ? vra_entry10:
+                                fr_stallState == 3 ? vra_entry13:0): fr_ra_val;
+    wire[15:0] pipe_1_rx_val = fr_is_vector_op ? 
+                               (fr_stallState == 0 ? vrx_entry1:
+                                fr_stallState == 1 ? vrx_entry5:
+                                fr_stallState == 2 ? vrx_entry10:
+                                fr_stallState == 3 ? vrx_entry13:0): fr_ra_val;
+
+    
     wire pipe_1_valid = fr_stall_signal;
-    wire[15:0] pipe_1_result;
+    wire[15:0] x2_pipe_1_result;
     wire[15:0] x2_mem_1 = mem_bank_1_data;
+    wire[15:0] x2_overflow_1;
     //do some of these outputs need to be no-ops?
     alu pipe_1(clk, fr_pc, fr_ins, pipe_1_ra_val, pipe_1_rx_val,
         x2_mem_1, x2_pipe_1_result, x2_overflow_1);
 
-    wire[3:0] pipe_2_target_index = (fr_stallState-1)*4 + 2;  
-    wire[16:0] pipe_2_target_ra = fr_vra_val[pipe_2_target_index*16: (pipe_2_target_index+1)*16-1];
+
+    wire[15:0] pipe_2_ra_val = fr_is_vector_op ? 
+                               (fr_stallState == 0 ? vra_entry2:
+                                fr_stallState == 1 ? vra_entry6:
+                                fr_stallState == 2 ? vra_entry11:
+                                fr_stallState == 3 ? vra_entry14:0): fr_ra_val;
+    wire[15:0] pipe_2_rx_val = fr_is_vector_op ? 
+                               (fr_stallState == 0 ? vrx_entry2:
+                                fr_stallState == 1 ? vrx_entry6:
+                                fr_stallState == 2 ? vrx_entry11:
+                                fr_stallState == 3 ? vrx_entry14:0): fr_ra_val;
+
+   
     wire pipe_2_valid = fr_stall_signal;
-    wire[15:0] pipe_2_result;
+    wire[15:0] x2_pipe_2_result;
     wire[15:0] x2_mem_2 = mem_bank_2_data;
+    wire[15:0] x2_overflow_2;
     alu pipe_2(clk, fr_pc, fr_ins, pipe_2_ra_val, pipe_2_rx_val,
         x2_mem_2, x2_pipe_2_result, x2_overflow_2);
 
-    wire[3:0] pipe_3_target_index = (fr_stallState-1)*4 + 3;
-    wire[15:0] pipe_3_target = fr_vra_val[pipe_3_target_index*16: (pipe_3_target_index+1)*16-1];
+    wire[15:0] pipe_3_ra_val = fr_is_vector_op ? 
+                               (fr_stallState == 0 ? vra_entry3:
+                                fr_stallState == 1 ? vra_entry7:
+                                fr_stallState == 2 ? vra_entry12:
+                                fr_stallState == 3 ? vra_entry15:0): fr_ra_val;
+    wire[15:0] pipe_3_rx_val = fr_is_vector_op ? 
+                               (fr_stallState == 0 ? vrx_entry3:
+                                fr_stallState == 1 ? vrx_entry7:
+                                fr_stallState == 2 ? vrx_entry12:
+                                fr_stallState == 3 ? vrx_entry15:0): fr_ra_val;
+
+
     wire pipe_3_valid = fr_stall_signal;
-    wire[15:0] pipe_3_result;
+    wire[15:0] x2_pipe_3_result;
     wire[15:0] x2_mem_3 = mem_bank_3_data;
+    wire[15:0] x2_overflow_3;
     alu pipe_3(clk, fr_pc, fr_ins, pipe_3_ra_val, pipe_3_rx_val,
         x2_mem_3, x2_pipe_3_result, x2_overflow_3);
 
     //we need to keep updting the vector output
 
+    //============================EXECUTE/EXECUTE2========================================
+    // ALU in fr does computation, this percolates pc and vector lengths
+    reg [15:0] x_pc;
+    reg [15:0] x2_pc;
+    reg [15:0] x_vra_len;
+    reg [15:0] x2_vra_len;
+
+    always @(posedge clk) begin
+        x_pc <= fr_pc;
+        x2_pc <= x_pc;
+        x_vra_len <= fr_vra_size;
+        x2_vra_len <= x_vra_len;
+    end
+
     //================================COALESCE============================================
-    reg c_valid;
+    reg c_valid = 0;
     reg [15:0]c_pc;
     reg [3:0]c_ins;
     
@@ -365,15 +465,16 @@ module main();
     reg[15:0] c_pipe_2_result;
     reg[15:0] c_pipe_3_result;
 
-    //handle dot product 
+    //handle dot product
+    //Design decision: vector length
     wire c_ins_changing = x2_pc != c_pc;
-    wire [3:0] c_next_terms_left = x2_ra_val < x2_rx_val ? x2_vra_len : x2_vrx_len;
+    wire [3:0] c_next_terms_left = x2_vra_len;
     //TODO the wires above might not exist yet lol
     wire[15:0] c_dot_prod_curr_sum = c_dot_prod_running_sum + c_to_add;
-    wire [15:0] c_to_add = c_add_terms_left == 1 ? c_pipe_0_result :
-            c_add_terms_left == 2 ? c_pipe_0_result + c_pipe_1_result : 
-            c_add_terms_left == 3 ? c_pipe_0_result + c_pipe_1_result + c_pipe_2_result :
-            c_add_terms_left >= 4 ? c_pipe_0_result + c_pipe_1_result + c_pipe_3_result + c_pipe_4_result : 0;
+    wire [15:0] c_to_add = c_dot_prod_terms_left == 1 ? c_pipe_0_result :
+            c_dot_prod_terms_left == 2 ? c_pipe_0_result + c_pipe_1_result : 
+            c_dot_prod_terms_left == 3 ? c_pipe_0_result + c_pipe_1_result + c_pipe_2_result :
+            c_dot_prod_terms_left >= 4 ? c_pipe_0_result + c_pipe_1_result + c_pipe_2_result + c_pipe_3_result : 0;
     reg[15:0] c_dot_prod_running_sum;
     reg[3:0] c_dot_prod_terms_left;
 
@@ -386,7 +487,7 @@ module main();
         c_dot_prod_terms_left <= c_ins_changing ? c_dot_prod_terms_left - 4 : c_next_terms_left;
         c_dot_prod_running_sum <= c_ins_changing ? 0 : c_dot_prod_curr_sum; 
 
-        c_valid <= x2_valid;
+        c_valid <= x2_valid && !wb_flush;
         c_pc <= x2_pc;
         c_ins <= x2_ins;
 
@@ -468,7 +569,7 @@ module main();
                             wb_isVld | wb_isVst | wb_isVdot);
 
 
-    wire wb_valid = 0;
+    reg wb_valid = 0;
     reg [15:0]wb_pc;
     reg [15:0]wb_ins;
 
@@ -493,24 +594,21 @@ module main();
     wire wb_take_jump =  (x_isJz) ? (x_operand_1 == 0 ? 1 :0):
                         (x_isJnz) ? (x_operand_1 != 0 ? 1 : 0):
                         (x_isJs) ? (x_operand_1[15] ? 1 : 0):
-                        (x_isJns) ? (!x_operand_1[15] ? 1 : 0):0;
+                        (x_isJns) ? (!x_operand_1[15] ? 1 : 0) : 0;
     
     //TODO: deal with read after writes maybe?
-    wire wb_flush = wb_take_jump;
+    assign wb_flush = wb_take_jump && wb_valid;
 
     wire wb_is_print = wb_reg_scalar_wen && (wb_rt == 0);
                         
 
     always @(posedge clk) begin
         
-        if(wb_isInvalid_Op) begin
-            halt <= 1;
-            $finish;
-        end
+        
         // wb_stallCycle <= wb_stall ? 
 
         //we need to write, given the outputs from the pipé
-        wb_valid <= c_valid;
+        wb_valid <= c_valid && !wb_flush;
         wb_pc <= c_pc;
         wb_ins <= c_ins;
 
@@ -523,8 +621,25 @@ module main();
         wb_ra_val <= c_ra_val;
         wb_rx_val <= c_rx_val;
 
-        if (wb_is_print) begin
-            print("%c", result);
+        if(wb_valid) begin
+            if(wb_isInvalid_Op) begin
+                halt <= 1;
+                $finish;
+            end
+
+            if (wb_is_print) begin
+                print("%c", result);
+            end
+
+            if(wb_take_jump) begin
+                pc <= result;
+            end
+        end
+
+        
+
+        if(!(wb_flush && wb_valid)) begin
+            pc <= pc+2;
         end
 
 
