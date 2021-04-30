@@ -229,7 +229,11 @@ module main();
 
     
     reg [2:0]fr_stallState = 0; //0 = not stalling, 1 = final stall cycle, 2 = 2nd final...
-    wire[1:0] fr_num_stall_needed = fr_vra_len - >> 2 + fr_vra_len[1:0]; //TODO check sizes
+    //Do we store the length of what it actually is or the adjusted one in the register file
+    //Assuming we are one under in the reg file. Also should we add one or not?
+    wire [5:0] len_of_vector = fr_isVld ? fr_ins[7:4] + 1 : fr_vra_len + 1;
+    //1-4 => 1, 5-8 => 2, 9-12 => 3, 13-16 => 4
+    wire[2:0] fr_num_stall_needed = ((fr_vra_len -1) >> 2) + 1; //TODO check sizes
     wire fr_stall_signal = (fr_stallState === 1 || fr_stallState !== 0); 
     
     //values percolated from decode
@@ -248,14 +252,16 @@ module main();
 
     always @(posedge clk) begin
 
-        //here, we want to decide, if this is a vector op, how many cycles to stall for
-        fr_stall_cycles <= fr_stall_cycles_temp - 1;
+        if(fr_valid && (fr_stallState == 0)) begin
+          fr_stallState <= fr_num_stall_needed;
+        end else begin
+          fr_stall_cycles <= fr_stall_cycles_temp - 1;
+        end      
 
         //percolate values
         fr_valid <= d_valid  && !wb_flush;
         fr_pc <= d_pc;
         fr_ins <= d_ins;
-
     end
 
     // we will have four pipelines
@@ -398,13 +404,12 @@ module main();
         x_pc <= fr_pc;
         x_ins <= fr_ins;
         x_valid <= fr_valid;
-        x_vra_len <= fr_vra_len;
+        x_vra_len <= len_of_vector;
 
         x2_pc <= x_pc;
         x2_ins <= x_ins;
         x2_valid <= x_valid && !wb_flush;
         x2_vra_len <= x_vra_len;
-        x2_ra_val <= x_ra_val
     end
 
     //================================COALESCE============================================
