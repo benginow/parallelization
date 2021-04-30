@@ -572,12 +572,12 @@ module main();
 
 
     wire wb_writes_reg = (wb_isAdd || wb_isSub || wb_isMul || wb_isDiv || wb_isLd || wb_isVdot || wb_isMovl || wb_isMovh);
-    assign regWEn = wb_isValid && wb_writes_reg && wb_rt != 0;
+    assign regWEn = wb_valid && wb_writes_reg && wb_rt != 0;
     assign regWData = wb_scalar_output;
     assign regWAddr = wb_rt;
 
     wire wb_reg_vector_wen = (wb_isVadd || wb_isVsub || wb_isVmul || wb_isVdiv || wb_isVld);
-    assign vregWEn = wb_isValid && wb_reg_vector_wen;  
+    assign vregWEn = wb_valid && wb_reg_vector_wen;  
 
     wire wb_mem_wen_0  = (wb_isVst || (wb_isSt && ((wb_ra_val % 4) === 0)) );
     wire wb_mem_wen_1 = (wb_isVst || (wb_isSt && ((wb_ra_val % 4) === 1)) );

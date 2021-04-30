@@ -40,12 +40,19 @@ module alu(input clk, input[15:0]fr_pc, input[15:0]fr_ins,
     wire x_isJs = x_isJmp && x_subcode == 2;
     wire x_isJns = x_isJmp && x_subcode == 3;
 
+    wire x_isMovl = x_opcode == 4'b0100;
+    wire x_isMovh = x_opcode == 4'b0101;
+
     /*  x_result is the relevant computed value:
             Arithmetic : outputs the computed value
             Jumps: outputs the next PC
             Load: outputs loaded value
             Store: output 
     */
+
+    wire [15:0] x_movl_result;
+    assign x_movl_result[7:0] = x_ival[7:0];
+    assign x_movl_result[15:8] = {8{x_ival[7]}}; 
 
     wire[15:0] x_result = (x_is_div) ?  x_operand_1 / x_operand_2 :
                         (x_is_sub) ? x_operand_1 - x_operand_2 :
@@ -56,7 +63,7 @@ module alu(input clk, input[15:0]fr_pc, input[15:0]fr_ins,
                         (x_isJs) ? (x_operand_1[15] ? x_operand_2 : x_pc+2) :
                         (x_isJns) ? (!x_operand_1[15] ? x_operand_2 : x_pc+2) :
                         (x_isSt) ? x_operand_1 : 
-                        (x_isMovl) ? (x_ival[7] ? 16'hff00 | i : i) : //{8{x_ival[7]}, x_ival}:
+                        (x_isMovl) ? x_movl_result :
                         (x_isMovh) ? ((x_operand_2 & 8'hff) | (x_ival << 8)):
                         0;
 
