@@ -69,11 +69,11 @@ def main (file_name):
 
             ins2binary = opcode + ra + rb + rt
         elif ins == "vld" or ins == "vst":
-            #vld vrt,vra,$imm
+            #vld vrt,ra,$imm+1
             ra = int(line[2].replace("r",""))
             ra = "{0:04b}".format(ra)
 
-            i = int(line[3])
+            i = int(line[3]) - 1
             i = "{0:04b}".format(i)
 
             rt = int(line[1].replace("vr",""))
