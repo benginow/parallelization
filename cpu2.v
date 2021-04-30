@@ -255,7 +255,7 @@ module main();
         if(fr_valid && (fr_stallState == 0)) begin
           fr_stallState <= fr_num_stall_needed;
         end else begin
-          fr_stall_cycles <= fr_stall_cycles_temp - 1;
+          fr_stallState <= fr_stallState - 1;
         end      
 
         //percolate values
@@ -466,10 +466,10 @@ module main();
     // reg[15:0] c_ra_val;
     // reg[15:0] c_rx_val;
 
-    // reg[15:0] c_pipe_0_result;
-    // reg[15:0] c_pipe_1_result;
-    // reg[15:0] c_pipe_2_result;
-    // reg[15:0] c_pipe_3_result;
+    reg[15:0] c_pipe_0_result;
+    reg[15:0] c_pipe_1_result;
+    reg[15:0] c_pipe_2_result;
+    reg[15:0] c_pipe_3_result;
 
 
     //handle dot product
@@ -509,6 +509,8 @@ module main();
         // c_rx_val <= x2_rx_val;
 
         c_scalar_output = c_pipe_0_result;
+        // should we mov the c_pipe_0_result or the x2_pipe0 result
+        //What does the colon do? I think it is throwing an error
         c_new_vector[pipe_0_curr_target + 15 : pipe_0_curr_target] <= c_pipe_0_result;
         c_new_vector[pipe_1_curr_target + 15 : pipe_1_curr_target] <= c_pipe_1_result;
         c_new_vector[pipe_2_curr_target + 15 : pipe_2_curr_target] <= c_pipe_2_result;
@@ -565,7 +567,7 @@ module main();
     wire wb_mem_wen_2 = (wb_isVst || (wb_isSt && ((wb_ra_val % 4) === 2)) );
     wire wb_mem_wen_3 = (wb_isVst || (wb_isSt && ((wb_ra_val % 4) === 3)) );
 
-    reg wb_pipe_0_result;
+    //reg wb_pipe_0_result;
     // reg wb_pipe_1_output;
     // reg wb_pipe_2_output;
     // reg wb_pipe_3_output;
@@ -616,8 +618,8 @@ module main();
         wb_pc <= c_pc;
         wb_ins <= c_ins;
 
-        wb_ra_val <= c_ra_val;
-        wb_rx_val <= c_rx_val;
+        // wb_ra_val <= c_ra_val;
+        // wb_rx_val <= c_rx_val;
 
         if(wb_valid) begin
             if(wb_isInvalid_Op) begin
@@ -626,11 +628,11 @@ module main();
             end
 
             if (wb_is_print) begin
-                $display("%c", result);
+                $display("%c", c_scalar_output);
             end
 
             if(wb_take_jump) begin
-                f1_pc <= result;
+                f1_pc <= c_scalar_output;
             end
         end
 
