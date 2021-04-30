@@ -17,6 +17,7 @@ module alu(input clk, input[15:0]fr_pc, input[15:0]fr_ins,
 
     wire [3:0]x_opcode = x_ins[15:12];
     wire [3:0]x_subcode = x_ins[7:4];
+    wire [7:0]x_ival = x_ins[11:4];
     
     reg [15:0]x_operand_1;
     reg [15:0]x_operand_2;
@@ -54,7 +55,13 @@ module alu(input clk, input[15:0]fr_pc, input[15:0]fr_ins,
                         (x_isJnz) ? (x_operand_1 != 0 ? x_operand_2 : x_pc+2) :
                         (x_isJs) ? (x_operand_1[15] ? x_operand_2 : x_pc+2) :
                         (x_isJns) ? (!x_operand_1[15] ? x_operand_2 : x_pc+2) :
-                        (x_isSt) ? x_operand_1 : 0;
+                        (x_isSt) ? x_operand_1 : 
+                        (x_isMovl) ? (x_ival[7] ? 16'hff00 | i : i) : //{8{x_ival[7]}, x_ival}:
+                        (x_isMovh) ? ((x_operand_2 & 8'hff) | (x_ival << 8)):
+                        0;
+
+        // MOVL: x_isMovl? (stall_stage_2[11] ? 16'hff00 | stall_stage_2[11:4] : stall_stage_2[11:4]): 
+        //MOVH: x_isMovh? (stall_stage_2_val_1 & 16'h00ff) | (stall_stage_2[11:4] << 8):
 
     // wire x_take_jump =  (x_isJz) ? (x_operand_1 == 0 ? 1 :0):
     //                     (x_isJnz) ? (x_operand_1 != 0 ? 1 : 0):

@@ -241,6 +241,7 @@ module main();
     reg [15:0]fr_pc;
     reg [15:0]fr_ins;
 
+    //Do we need to save these values?
     wire[15:0] fr_ra_val = regData0;
     wire[15:0] fr_rx_val = regData1;
 
@@ -356,7 +357,6 @@ module main();
                                 fr_stall_state == 1 ? vrx_entry6:
                                 fr_stall_state == 2 ? vrx_entry11:
                                 fr_stall_state == 3 ? vrx_entry14:0): fr_ra_val;
-
    
     wire pipe_2_valid = fr_stall_signal;
     wire[15:0] x2_pipe_2_result;
@@ -531,6 +531,7 @@ module main();
     //================================WRITEBACK===========================================
     wire [3:0]wb_opcode = wb_ins[15:12];
     wire [3:0]wb_subcode = wb_ins[7:4];
+    
 
     wire wb_isAdd = wb_opcode == 4'b0000;
     wire wb_isSub = wb_opcode == 4'b0001;
@@ -570,20 +571,20 @@ module main();
                || wb_isVld || wb_isVst || wb_isVdot;
 
 
-    wire wb_reg_scalar_wen = (wb_isAdd || wb_isSub || wb_isMul || wb_isDiv || wb_isLd || wb_isVdot || wb_isMovl || wb_isMovh);
+    wire wb_writes_reg = (wb_isAdd || wb_isSub || wb_isMul || wb_isDiv || wb_isLd || wb_isVdot || wb_isMovl || wb_isMovh);
+    assign regWEn = wb_isValid && wb_writes_reg && wb_rt != 0;
+    assign regWData = wb_scalar_output;
+    assign regWAddr = wb_rt;
+
     wire wb_reg_vector_wen = (wb_isVadd || wb_isVsub || wb_isVmul || wb_isVdiv || wb_isVld);
+    assign vregWEn = wb_isValid && wb_reg_vector_wen;  
 
     wire wb_mem_wen_0  = (wb_isVst || (wb_isSt && ((wb_ra_val % 4) === 0)) );
     wire wb_mem_wen_1 = (wb_isVst || (wb_isSt && ((wb_ra_val % 4) === 1)) );
     wire wb_mem_wen_2 = (wb_isVst || (wb_isSt && ((wb_ra_val % 4) === 2)) );
     wire wb_mem_wen_3 = (wb_isVst || (wb_isSt && ((wb_ra_val % 4) === 3)) );
 
-    //reg wb_pipe_0_result;
-    // reg wb_pipe_1_output;
-    // reg wb_pipe_2_output;
-    // reg wb_pipe_3_output;
-
-    wire wb_isInvalid_Op = !(wb_isAdd | wb_isSub | wb_isMul | wb_isDiv |
+    wire wb_is_invalid_op = !(wb_isAdd | wb_isSub | wb_isMul | wb_isDiv |
                             wb_isMovl | wb_isMovh | wb_isLd | wb_isSt |
                             wb_isJz | wb_isJnz | wb_isJs | wb_isJns |
                             wb_isVadd | wb_isVsub | wb_isVmul | wb_isVdiv |
@@ -595,10 +596,13 @@ module main();
     reg [15:0]wb_ins;
     reg[15:0] wb_ra_val;
     reg[15:0] wb_rx_val;
+    reg[15:0] wb_scalar_output;
     
-    wire[3:0] wb_ra = d_ins[11:8]; //always needed
-    wire[3:0] wb_rb = d_ins[7:4];
-    wire[3:0] wb_rt = d_ins[3:0];
+    wire [3:0]wb_ra = wb_ins[11:8];
+    wire [3:0]wb_rb = wb_ins[7:4];
+    wire [3:0]wb_rt = wb_ins[3:0];
+
+
 
     reg wb_stallCycle;
     
@@ -616,8 +620,8 @@ module main();
     //TODO: deal with read after writes maybe?
     assign wb_flush = wb_take_jump && wb_valid;
 
-    wire wb_is_print = wb_reg_scalar_wen && (wb_rt == 0);
-                        
+    wire wb_is_print = wb_writes_reg && (wb_rt == 0);
+                         
 
     always @(posedge clk) begin
         
@@ -628,22 +632,23 @@ module main();
         wb_valid <= c_valid && !wb_flush;
         wb_pc <= c_pc;
         wb_ins <= c_ins;
+        wb_scalar_output <= c_scalar_output;
 
         // wb_ra_val <= c_ra_val;
         // wb_rx_val <= c_rx_val;
 
         if(wb_valid) begin
-            if(wb_isInvalid_Op) begin
+            if(wb_isHalt || wb_is_invalid_op) begin
                 halt <= 1;
                 $finish;
             end
 
             if (wb_is_print) begin
-                $display("%c", c_scalar_output);
+                $display("%c", wb_scalar_output[7:0]);
             end
 
             if(wb_take_jump) begin
-                f1_pc <= c_scalar_output;
+                f1_pc <= wb_scalar_output;
             end
         end
 
