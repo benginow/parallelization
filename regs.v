@@ -4,8 +4,6 @@ module regs(input clk,
     input [3:0]raddr0_, output [15:0]rdata0,
     input [3:0]raddr1_, output [15:0]rdata1,
     input wen, input [3:0]waddr, input [15:0]wdata);
-
-
     reg [15:0]data[0:15];
 
     reg [3:0]raddr0;
