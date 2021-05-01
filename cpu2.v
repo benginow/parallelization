@@ -92,7 +92,7 @@ module main();
         mem_bank_3_raddr[15:1], mem_bank_3_data,
         mem_bank_3_wen, mem_bank_3_waddr[15:1], mem_bank_3_wdata);
     
-    wire wb_flush; //global control signal
+    wire flush; //global control signal
     
     //=====================FETCH 1=====================
     reg[15:0]f1_pc = 0;
@@ -112,16 +112,16 @@ module main();
 
     //=====================FETCH 2=====================
     wire f2_stall;
-    reg[15:0]f2_pc = 16'hffff;
+    reg[15:0]f2_pc;
     reg f2_valid = 0;
     always @(posedge clk) begin
         f2_pc <= f1_pc;
         //if f1 is an invalid wire, we want the next to be invalid
-        f2_valid <= f1_valid && !wb_flush;
+        f2_valid <= f1_valid;
     end 
 
     //=====================DECODE======================
-    reg[15:0]d_pc = 16'hffff;
+    reg[15:0]d_pc;
     reg d_valid = 0;
     wire[15:0]d_ins = instr_mem_data;
     reg [15:0]d_lastIns;
@@ -183,7 +183,7 @@ module main();
 
     always @(posedge clk) begin
         d_pc <= f2_pc;
-        d_valid <= f2_valid && !wb_flush;
+        d_valid <= f2_valid;
         d_lastIns <= instr_mem_data;
     end
 
@@ -260,7 +260,7 @@ module main();
         end      
 
         //percolate values
-        fr_valid <= d_valid  && !wb_flush;
+        fr_valid <= d_valid;
         fr_pc <= d_pc;
         fr_ins <= d_ins;
     end
@@ -390,13 +390,13 @@ module main();
     // ALU in fr does computation, this percolates pc and vector lengths
     reg [15:0] x_pc;
     reg [15:0] x_ins;
-    reg [15:0] x_valid;
+    reg x_valid = 0;
     reg [15:0] x_vra_len;
     reg [15:0] x_target_entries;
     
     reg [15:0] x2_pc;
     reg [15:0] x2_ins;
-    reg [15:0] x2_valid;
+    reg x2_valid = 0;
     reg [15:0] x2_vra_len;
     reg [15:0] x2_target_entries;
     // reg [15:0] x2_ra_val;
@@ -411,7 +411,7 @@ module main();
 
         x2_pc <= x_pc;
         x2_ins <= x_ins;
-        x2_valid <= x_valid && !wb_flush;
+        x2_valid <= x_valid;
         x2_vra_len <= x_vra_len;
         x2_target_entries <= x_target_entries;
     end
@@ -419,7 +419,7 @@ module main();
     //================================COALESCE============================================
     reg c_valid = 0;
     reg [15:0]c_pc;
-    reg [3:0]c_ins;
+    reg [15:0]c_ins;
     
     wire [3:0]c_opcode = c_ins[15:12];
     wire [3:0]c_subcode = c_ins[7:4];
@@ -461,7 +461,7 @@ module main();
                 || c_isVld || c_isVst || c_isVdot;
 
     reg [255:0] c_new_vector;
-    reg [15:0] c_scalar_output;
+    wire [15:0] c_scalar_output = c_pipe_0_result;
 
     reg [2:0] c_target_entries; //chooses entries to write in coalesced vector
 
@@ -492,7 +492,7 @@ module main();
         c_dot_prod_terms_left <= c_ins_changing ? c_dot_prod_terms_left - 4 : c_next_terms_left;
         c_dot_prod_running_sum <= c_ins_changing ? 0 : c_dot_prod_curr_sum; 
         
-        c_valid <= x2_valid && !wb_flush;
+        c_valid <= x2_valid;
         c_pc <= x2_pc;
         c_ins <= x2_ins;
         
@@ -500,9 +500,6 @@ module main();
         c_pipe_1_result <= x2_pipe_1_result;
         c_pipe_2_result <= x2_pipe_2_result;
         c_pipe_3_result <= x2_pipe_3_result;
-
-        c_scalar_output = c_pipe_0_result;
-        // should we mov the c_pipe_0_result or the x2_pipe0 result
 
         // newVector[X:Y] <= validZ ? newVector[X:Y] : pipe_0_output
         //0 -> 0,4,8,12
@@ -618,7 +615,7 @@ module main();
                         (wb_isJns) ? (!wb_ra[15] ? 1 : 0) : 0;
     
     //TODO: deal with read after writes maybe?
-    assign wb_flush = wb_take_jump && wb_valid;
+    assign flush = wb_take_jump && wb_valid;
 
     wire wb_is_print = wb_writes_reg && (wb_rt == 0);
                          
@@ -629,7 +626,7 @@ module main();
         // wb_stallCycle <= wb_stall ? 
 
         //we need to write, given the outputs from the pipé
-        wb_valid <= c_valid && !wb_flush;
+        wb_valid <= c_valid;
         wb_pc <= c_pc;
         wb_ins <= c_ins;
         wb_scalar_output <= c_scalar_output;
@@ -644,7 +641,7 @@ module main();
             end
 
             if (wb_is_print) begin
-                $display("%c", wb_scalar_output[7:0]);
+                $write("%c", wb_scalar_output);
             end
 
             if(wb_take_jump) begin
@@ -653,7 +650,7 @@ module main();
         end
 
     
-        if(!(wb_flush && wb_valid)) begin
+        if(!(flush && wb_valid)) begin
             f1_pc <= f1_pc+2;
         end
 

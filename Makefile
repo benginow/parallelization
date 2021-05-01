@@ -47,7 +47,7 @@ ${TEST_TESTS} : %.test : Makefile %.result
 test : ${TEST_TESTS};
 
 clean:
-	-rm -rf cpu *.out *.diff *.raw *.out *.result *.time *.cycles
+	-rm -rf cpu *.out *.diff *.raw *.out *.result *.time *.cycles *.vcd
 
 ######### remote things ##########
 

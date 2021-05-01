@@ -22,7 +22,7 @@ module alu(input clk, input[15:0]fr_pc, input[15:0]fr_ins,
     reg [15:0]x_operand_1;
     reg [15:0]x_operand_2;
 
-    wire x_isScalarMem = x_opcode == 4'b0100;
+    wire x_isScalarMem = x_opcode == 4'b0111;
     wire x_isMem = (x_isScalarMem) || 
                 (x_opcode == 4'b1100) ||
                 (x_opcode == 4'b1101);
@@ -76,6 +76,7 @@ module alu(input clk, input[15:0]fr_pc, input[15:0]fr_ins,
     //                     (x_isJns) ? (!x_operand_1[15] ? 1 : 0):0;
     
     always @(posedge clk) begin
+        x_pc <= fr_pc;
         x_ins <= fr_ins;
         x_operand_1 <= fr_operand_1;
         x_operand_2 <= fr_operand_2;
@@ -96,9 +97,9 @@ module alu(input clk, input[15:0]fr_pc, input[15:0]fr_ins,
     assign x2_result = x2_is_ld ? x2_mem : x2_prev_result;
 
     always @(posedge clk) begin
-        x2_prev_result <= x_result;
-        x2_ins <= x_ins;
         x2_pc <= x_pc;
+        x2_ins <= x_ins;
+        x2_prev_result <= x_result;
     end
 
 
