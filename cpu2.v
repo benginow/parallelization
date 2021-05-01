@@ -171,8 +171,8 @@ module main();
     wire[3:0] d_rb = d_ins[7:4];
     wire[3:0] d_rt = d_ins[3:0];
     //second register whose value is needed may be either rb or rt
-    wire d_rx = (d_isAdd || d_isSub || d_isMul || d_isDiv) ||
-            (d_isVadd || d_isVsub || d_isVmul || d_isVdiv) ?
+    wire[3:0] d_rx = ((d_isAdd || d_isSub || d_isMul || d_isDiv) ||
+            (d_isVadd || d_isVsub || d_isVmul || d_isVdiv)) ?
             d_rb : d_rt;
 
     assign regRAddr0 = d_ra;
@@ -245,8 +245,8 @@ module main();
     wire[3:0] fr_rb = fr_ins[7:4];
     wire[3:0] fr_rt = fr_ins[3:0];
     //second register whose value is needed may be either rb or rt
-    wire fr_rx = (fr_isAdd || fr_isSub || fr_isMul || fr_isDiv) ||
-            (fr_isVadd || fr_isVsub || fr_isVmul || fr_isVdiv) ?
+    wire[3:0] fr_rx = ((fr_isAdd || fr_isSub || fr_isMul || fr_isDiv) ||
+            (fr_isVadd || fr_isVsub || fr_isVmul || fr_isVdiv)) ?
             fr_rb : fr_rt;
 
     //max sure we return 0 if its 0
