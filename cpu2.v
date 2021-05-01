@@ -241,9 +241,17 @@ module main();
     reg [15:0]fr_pc;
     reg [15:0]fr_ins;
 
-    //Do we need to save these values?
-    wire[15:0] fr_ra_val = regData0;
-    wire[15:0] fr_rx_val = regData1;
+    wire[3:0] fr_ra = fr_ins[11:8]; //always needed
+    wire[3:0] fr_rb = fr_ins[7:4];
+    wire[3:0] fr_rt = fr_ins[3:0];
+    //second register whose value is needed may be either rb or rt
+    wire fr_rx = (fr_isAdd || fr_isSub || fr_isMul || fr_isDiv) ||
+            (fr_isVadd || fr_isVsub || fr_isVmul || fr_isVdiv) ?
+            fr_rb : fr_rt;
+
+    //max sure we return 0 if its 0
+    wire[15:0] fr_ra_val = (fr_ra == 0) ? 0 : regData0;
+    wire[15:0] fr_rx_val = (fr_rx == 0) ? 0 : regData1;
 
     //TODO: vregs size functionality
     wire[2:0] fr_vra_len = vregData0Len;
