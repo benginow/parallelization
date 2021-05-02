@@ -117,7 +117,7 @@ module main();
     always @(posedge clk) begin
         f2_pc <= f1_pc;
         //if f1 is an invalid wire, we want the next to be invalid
-        f2_valid <= f1_valid;
+        f2_valid <= f1_valid && !flush;
     end 
 
     //=====================DECODE======================
@@ -183,7 +183,7 @@ module main();
 
     always @(posedge clk) begin
         d_pc <= f2_pc;
-        d_valid <= f2_valid;
+        d_valid <= f2_valid && !flush;
         d_lastIns <= instr_mem_data;
     end
 
@@ -268,7 +268,7 @@ module main();
         end      
 
         //percolate values
-        fr_valid <= d_valid;
+        fr_valid <= d_valid && !flush;
         fr_pc <= d_pc;
         fr_ins <= d_ins;
     end
@@ -424,7 +424,7 @@ module main();
     always @(posedge clk) begin
         x_pc <= fr_pc;
         x_ins <= fr_ins;
-        x_valid <= fr_valid;
+        x_valid <= fr_valid && !flush;
         x_vra_len <= len_of_vector;
         x_target_entries <= fr_stall_state;
         x_ra_val <= fr_ra_val;
@@ -432,7 +432,7 @@ module main();
 
         x2_pc <= x_pc;
         x2_ins <= x_ins;
-        x2_valid <= x_valid;
+        x2_valid <= x_valid && !flush;
         x2_vra_len <= x_vra_len;
         x2_target_entries <= x_target_entries;
 
@@ -519,7 +519,7 @@ module main();
         c_dot_prod_terms_left <= c_ins_changing ? c_dot_prod_terms_left - 4 : c_next_terms_left;
         c_dot_prod_running_sum <= c_ins_changing ? 0 : c_dot_prod_curr_sum; 
         
-        c_valid <= x2_valid;
+        c_valid <= x2_valid && !flush;
         c_pc <= x2_pc;
         c_ins <= x2_ins;
 
@@ -673,7 +673,7 @@ module main();
         // wb_stallCycle <= wb_stall ? 
 
         //we need to write, given the outputs from the pipé
-        wb_valid <= c_valid;
+        wb_valid <= c_valid && !flush;
         wb_pc <= c_pc;
         wb_ins <= c_ins;
         wb_scalar_output <= c_scalar_output;
