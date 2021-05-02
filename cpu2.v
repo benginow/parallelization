@@ -139,7 +139,7 @@ module main();
     wire d_isMovl = d_opcode == 4'b0100;
     wire d_isMovh = d_opcode == 4'b0101;
     wire d_isJmp = d_opcode == 4'b0110;
-    wire d_isScalarMem = d_opcode == 4'b0100;
+    wire d_isScalarMem = d_opcode == 4'b0111;
     wire d_isMem = (d_isScalarMem) || 
                 (d_opcode == 4'b1100) ||
                 (d_opcode == 4'b1101);
@@ -199,7 +199,7 @@ module main();
     wire fr_isMovl = fr_opcode == 4'b0100;
     wire fr_isMovh = fr_opcode == 4'b0101;
     wire fr_isJmp = fr_opcode == 4'b0110;
-    wire fr_isScalarMem = fr_opcode == 4'b0100;
+    wire fr_isScalarMem = fr_opcode == 4'b0111;
     wire fr_isMem = (fr_isScalarMem) || 
                 (fr_opcode == 4'b1100) ||
                 (fr_opcode == 4'b1101);
@@ -329,6 +329,15 @@ module main();
     wire[15:0] x2_mem_0 = mem_bank_0_data;
     wire[15:0] x2_pipe_0_result;
     wire[15:0] x2_overflow_0;
+
+    //Assign read addresses for ALU
+    assign mem_bank_0_raddr = fr_isLd ? fr_ra_val : 0;
+    //assign mem_bank_1_raddr
+    //assign mem_bank_2_raddr
+    //assign mem_bank_3_raddr
+
+
+
     alu pipe_0(clk, fr_pc, fr_ins, pipe_0_ra_val, pipe_0_rx_val,
         x2_mem_0, x2_pipe_0_result, x2_overflow_0);
 
@@ -401,14 +410,16 @@ module main();
     reg x_valid = 0;
     reg [15:0] x_vra_len;
     reg [15:0] x_target_entries;
+    reg [15:0] x_ra_val;
+    reg [15:0] x_rx_val;
     
     reg [15:0] x2_pc;
     reg [15:0] x2_ins;
     reg x2_valid = 0;
     reg [15:0] x2_vra_len;
     reg [15:0] x2_target_entries;
-    // reg [15:0] x2_ra_val;
-    // reg [15:0] x2_rx_val
+    reg [15:0] x2_ra_val;
+    reg [15:0] x2_rx_val;
 
     always @(posedge clk) begin
         x_pc <= fr_pc;
@@ -416,12 +427,17 @@ module main();
         x_valid <= fr_valid;
         x_vra_len <= len_of_vector;
         x_target_entries <= fr_stall_state;
+        x_ra_val <= fr_ra_val;
+        x_rx_val <= fr_rx_val;
 
         x2_pc <= x_pc;
         x2_ins <= x_ins;
         x2_valid <= x_valid;
         x2_vra_len <= x_vra_len;
         x2_target_entries <= x_target_entries;
+
+        x2_ra_val <= x_ra_val;
+        x2_rx_val <= x_rx_val;
     end
 
     //================================COALESCE============================================
@@ -440,7 +456,7 @@ module main();
     wire c_isMovl = c_opcode == 4'b0100;
     wire c_isMovh = c_opcode == 4'b0101;
     wire c_isJmp = c_opcode == 4'b0110;
-    wire c_isScalarMem = c_opcode == 4'b0100;
+    wire c_isScalarMem = c_opcode == 4'b0111;
     wire c_isMem = (c_isScalarMem) || 
                 (c_opcode == 4'b1100) ||
                 (c_opcode == 4'b1101);
@@ -478,6 +494,9 @@ module main();
     reg[15:0] c_pipe_2_result;
     reg[15:0] c_pipe_3_result;
 
+    reg[15:0] c_ra_val;
+    reg[15:0] c_rx_val;
+
     //handle dot product
     //Design decision: vector length
     wire c_ins_changing = x2_pc != c_pc;
@@ -503,6 +522,9 @@ module main();
         c_valid <= x2_valid;
         c_pc <= x2_pc;
         c_ins <= x2_ins;
+
+        c_ra_val <= x2_ra_val;
+        c_rx_val <= x2_rx_val;
         
         c_pipe_0_result <= x2_pipe_0_result;
         c_pipe_1_result <= x2_pipe_1_result;
@@ -546,7 +568,7 @@ module main();
     wire wb_isMovl = wb_opcode == 4'b0100;
     wire wb_isMovh = wb_opcode == 4'b0101;
     wire wb_isJmp = wb_opcode == 4'b0110;
-    wire wb_isScalarMem = wb_opcode == 4'b0100;
+    wire wb_isScalarMem = wb_opcode == 4'b0111;
     wire wb_isMem = (wb_isScalarMem) || 
                 (wb_opcode == 4'b1100) ||
                 (wb_opcode == 4'b1101);
@@ -584,10 +606,27 @@ module main();
     wire wb_reg_vector_wen = (wb_isVadd || wb_isVsub || wb_isVmul || wb_isVdiv || wb_isVld);
     assign vregWEn = wb_valid && wb_reg_vector_wen;  
 
-    wire wb_mem_wen_0  = (wb_isVst || (wb_isSt && ((wb_ra_val % 4) === 0)) );
-    wire wb_mem_wen_1 = (wb_isVst || (wb_isSt && ((wb_ra_val % 4) === 1)) );
-    wire wb_mem_wen_2 = (wb_isVst || (wb_isSt && ((wb_ra_val % 4) === 2)) );
-    wire wb_mem_wen_3 = (wb_isVst || (wb_isSt && ((wb_ra_val % 4) === 3)) );
+    wire wb_mem_bank_wen_0  = (wb_isVst || (wb_isSt && ((wb_ra_val % 4) === 0)) );
+    wire wb_mem_bank_wen_1 = (wb_isVst || (wb_isSt && ((wb_ra_val % 4) === 1)) );
+    wire wb_mem_bank_wen_2 = (wb_isVst || (wb_isSt && ((wb_ra_val % 4) === 2)) );
+    wire wb_mem_bank_wen_3 = (wb_isVst || (wb_isSt && ((wb_ra_val % 4) === 3)) );
+
+    //TODO: logic for vector writeback
+    wire[15:0] wb_mem_bank_0_waddr = wb_isSt ? wb_ra_val : 0;
+    //wire[15:0] wb_mem_bank_1_waddr = 
+    //wire[15:0] wb_mem_bank_2_waddr = 
+    //wire[15:0] wb_mem_bank_3_waddr = 
+
+    
+    wire[15:0] wb_mem_bank_0_wdata = wb_isSt ? wb_rx_val : 0;
+
+
+    assign mem_bank_0_wen = wb_mem_bank_wen_0;
+    assign mem_bank_0_waddr = wb_mem_bank_0_waddr;
+    assign mem_bank_0_wdata =  wb_mem_bank_0_wdata;
+
+
+    //mem_bank_0_wen, mem_bank_0_waddr[15:1], mem_bank_0_wdata
 
     wire wb_is_invalid_op = !(wb_isAdd | wb_isSub | wb_isMul | wb_isDiv |
                             wb_isMovl | wb_isMovh | wb_isLd | wb_isSt |
@@ -639,8 +678,10 @@ module main();
         wb_ins <= c_ins;
         wb_scalar_output <= c_scalar_output;
 
-        // wb_ra_val <= c_ra_val;
-        // wb_rx_val <= c_rx_val;
+        //We said we didn't need to forward reg values but i'm pretty sure 
+        //we need to for at least the store operation.
+        wb_ra_val <= c_ra_val;
+        wb_rx_val <= c_rx_val;
 
         if(wb_valid) begin
             if(wb_isHalt || wb_is_invalid_op) begin
