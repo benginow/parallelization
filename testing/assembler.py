@@ -29,8 +29,13 @@ def main (file_name):
     for line in lines:
         line = line.strip()
         line = line.replace(" ", ",")
-        line = line.split(",")
-
+        line_ = line.split(",")
+        line = []
+        for l in line_:
+            l = l.strip()
+            if l != "":
+                line.append(l)
+        
         ins = line[0]
         opcode = ins_opcode.get(ins)
         
@@ -81,7 +86,7 @@ def main (file_name):
             ins2binary = opcode + ra + i + rt
         elif ins == "movl" or ins == "movh":
             i = int (line[2])
-            i = "{0:04b}".format(i)
+            i = "{0:08b}".format(i)
 
             rt = int(line[1].replace("r",""))
             rt = "{0:04b}".format(rt)
@@ -110,4 +115,4 @@ def main (file_name):
         encoded = encoded.replace("0x","")
         f.write(encoded + "\n")
 
-main ("t0")
+main ("test0")
