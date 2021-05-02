@@ -1,0 +1,34 @@
+-----------------------Basic Scalar Functionality------------------------------
+t0 - output something to r0 and halt
+t1 - output something to r0 and do invalid-instruction halt
+t2 - test initialized value of r0 using add, test r0 never gets modified
+t3 - test movl & movh, sign extension on movl
+t4 - test every kind of scalar math, no overflow or MODULO
+t5 - test scalar math with modulo and overflow only first few regs
+t6 - test all regs can be written and be read properly
+t7 - test data hazard on scalar regs
+t8 - test all jumps
+t9 - test scalar ld and st
+t10 - test data hazard with memory and scalar regs
+----------------------Basic Vector Funcitonality-------------------------------
+t11 - test vld and vst on a 4-length vector
+t12 - test vld and vst comprehensively on 16 length vectors
+t13 - test vector arithmetic (vadd-vdiv) on 16 length vectors
+t14 - test vld and vst with sub-16 length vectors, including non-4-aligned length
+t15 - test vdot result, including with sub-16 length and non-4-aligned length
+t16 - test data hazard with vector registers, including sub-16 length
+t17 - test data hazard with vld after vst @ same address @ full length
+t18 - test data hazard with vld after vst @ same address @ sub-16 length
+    Note: this is necessary because there's a possible case where the memory
+        that might be in the vector reg actually isn't cuz of the length
+t19 - test data hazard with vld after vst @ dif addresses @ any length
+t20 - test data hazard across scalar and vector mem ops a.k.a. vld after st and
+    ld after vst
+t21 - test data hazard with vdot
+--------------------------Advanced Functionality-------------------------------
+t22 - calculate a factorial
+t23 - test branch prediction with a loop
+t24 - test branch prediction with a more complex pattern (alternating if-else?)
+
+Note: testing data hazards should always include a selection test - being able to 
+    see both C and WB values and choose the more recent one if both are appropriate
