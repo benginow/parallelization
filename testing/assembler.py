@@ -110,6 +110,7 @@ def main (file_name):
 
     open(file_name + ".hex","w")
     f = open(file_name + ".hex","a")
+    f.write("@0\n")
     for line in ins2write:
         encoded = "0x{:04x}".format(int(line,2))
         encoded = encoded.replace("0x","")

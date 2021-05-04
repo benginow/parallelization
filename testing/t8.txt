@@ -1,0 +1,18 @@
+movl r1,1
+movl r2,4
+movl r3,16 
+movl r4,12
+movl r5,26
+movl r6,32
+jz r3,r2
+sub r0,r2,r0
+sub r2,r2,r1
+jnz r4,r2
+movl r7,0
+jns r5,r7
+movl r0,69
+sub r7,r7,r1
+js r6,r7
+HALT
+movl r0,68
+HALT

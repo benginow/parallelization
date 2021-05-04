@@ -1,0 +1,22 @@
+movl r1, 220
+movl r2, 69
+movl r3,0
+movl r3,0
+movl r3,0
+movl r3,0
+movl r3,0
+movl r3,0
+movl r3,0
+movl r3,0
+movl r3,0
+st r2,r1
+movl r3,0
+movl r3,0
+movl r3,0
+movl r3,0
+movl r3,0
+movl r3,0
+movl r3,0
+movl r3,0
+movl r3,0
+ld r0,r1
