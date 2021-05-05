@@ -33,29 +33,56 @@ def store_matrix(filename,matrix,store_row,start_mem_adress,n_vector_regs):
 def matrix2assembly (filename,matrices, store_by_rows,start_mem_adress,n_vector_regs):
     for matrix, store_by_row in list(zip(matrices,store_by_rows)):
         start_mem_adress,n_vector_regs = store_matrix(filename,matrix,store_by_row,start_mem_adress,n_vector_regs)
+    return start_mem_adress,n_vector_regs
 
-def save_img(img_path,filename):
+# def save_img(img_path,filename):
+#     n_vector_regs = 1
+#     start_mem_adress = 220
+#     f = open(filename,"w")
+#     f.close()
+
+#     img = cv2.imread(img_path)
+#     b,g,r = cv2.split(img)
+#     channel_divider = [[3 for i in range (len(b[0]))]]
+#     matrix2assembly (filename,[list(b),list(g),list(r),channel_divider], [True,True,True,True],start_mem_adress,n_vector_regs)
+# save_img("Lenna.png","Lenna_assembly.txt")
+
+def save_window(b,g,r,channel_divider,filename):
     n_vector_regs = 1
     start_mem_adress = 220
+
+    start_mem_adress,n_vector_regs = matrix2assembly (filename,[list(b),list(g),list(r),channel_divider], [True,True,True,True],start_mem_adress,n_vector_regs)
+    return start_mem_adress,n_vector_regs
+
+def save_img(img_path,filename):
     f = open(filename,"w")
     f.close()
 
+
     img = cv2.imread(img_path)
-    b,g,r = cv2.split(img)
-    channel_divider = [[3 for i in range (len(b[0]))]]
-    matrix2assembly (filename,[list(b),list(g),list(r),channel_divider], [True,True,True,True],start_mem_adress,n_vector_regs)
+    windowSize = [3,10]#heightxwidth
 
-# save_img("Lenna.png","Lenna_assembly.txt")
+    for y in range(0,img.shape[0],windowSize[0]):
+        for x in range(0,img.shape[1],windowSize[1]):
+            window = img[y:y + windowSize[0], x:x + windowSize[1]]
+            print ((x,y))
+            b,g,r = cv2.split(window)
+            channel_divider = [[3 for i in range (len(b[0]))]]
+            save_window(b,g,r,channel_divider,filename)
+            f = open(filename,"a")
+            f.write("\n\nPUT CODE HERE\n\n")
+            f.close()
 
 
-matrix_1 = [[1,2,3],[4,5,6],[7,8,9]]
-matrix_2 = [[1,2,3],[1,2,3],[1,2,3]]
-matrices = [matrix_1,matrix_2]
-store_by_rows = [True, False]
-filename = "matrix_multiplication_stored.txt"
-n_vector_regs = 1
-start_mem_adress = 220
-f = open(filename,"w")
-f.close()
+save_img("Lenna_full.png","Lenna_assembly.txt")
+# matrix_1 = [[1,2,3],[4,5,6],[7,8,9]]
+# matrix_2 = [[1,2,3],[1,2,3],[1,2,3]]
+# matrices = [matrix_1,matrix_2]
+# store_by_rows = [True, False]
+# filename = "matrix_multiplication_stored.txt"
+# n_vector_regs = 1
+# start_mem_adress = 220
+# f = open(filename,"w")
+# f.close()
 
-matrix2assembly(filename,matrices, store_by_rows,start_mem_adress,n_vector_regs)
+# matrix2assembly(filename,matrices, store_by_rows,start_mem_adress,n_vector_regs)
