@@ -532,6 +532,7 @@ module main();
     wire wb_mem_bank_wen_1 = (wb_is_vst || (wb_isSt && ((wb_ra_val % 4) === 1)) );
     wire wb_mem_bank_wen_2 = (wb_is_vst || (wb_isSt && ((wb_ra_val % 4) === 2)) );
     wire wb_mem_bank_wen_3 = (wb_is_vst || (wb_isSt && ((wb_ra_val % 4) === 3)) );
+    
     wire[255:0] wb_vec_reg;
     wire wb_vreg_mem_wen;
 
