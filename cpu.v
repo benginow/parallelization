@@ -571,6 +571,48 @@ module main();
     wire wb_mem_bank_wen_2 = (wb_is_vst || (wb_is_st && ((wb_ra_val % 4) === 2)) );
     wire wb_mem_bank_wen_3 = (wb_is_vst || (wb_is_st && ((wb_ra_val % 4) === 3)) );
 
+    wire[3:0] first_write = (wb_ra_val % 4);
+
+    //stores mem at addreessees 0, 4, 8, 12  
+    wire wb_mem_bank_wdata_04 = wb_stall_state === 0 ? wb_vec_reg[255:240] :
+                                wb_stall_state === 1 ?  wb_vec_reg[191:176] : 
+                                wb_stall_state === 2 ? wb_vec_reg[127:112] :
+                                wb_stall_state === 3 ?  wb_vec_reg[63:48] : 0;
+    //1, 5, 9, 13  
+    wire wb_mem_bank_wdata_15 = wb_stall_state === 0 ? wb_vec_reg[239:224] :
+                                wb_stall_state === 1 ?  wb_vec_reg[175:160] :
+                                wb_stall_state === 2 ? wb_vec_reg[111:96] :
+                                wb_stall_state === 3 ?  wb_vec_reg[47:32] : 0;
+    //2, 6, 10, 14
+    wire wb_mem_bank_wdata_26 = wb_stall_state === 0 ? wb_vec_reg[223:208] :
+                                wb_stall_state === 1 ?  wb_vec_reg[159:144] :
+                                wb_stall_state === 2 ? wb_vec_reg[95:80] :
+                                wb_stall_state === 3 ?  wb_vec_reg[31:16] : 0;
+    //3, 7, 11, 15
+    wire wb_mem_bank_wdata_37 = wb_stall_state === 0 ? wb_vec_reg[207:192] :
+                                wb_stall_state === 1 ?  wb_vec_reg[143:128] :
+                                wb_stall_state === 2 ? wb_vec_reg[79:64] :
+                                wb_stall_state === 3 ?  wb_vec_reg[15:0] : 0;
+
+    //not right
+    //wb_ra_val + 4*stall_state
+    wire wb_mem_bank_waddr_0 = first_write === 0 ? (wb_ra_val + 4 * stall_state) 
+                                first_write === 1 ? (wb_ra_val + 4) << 4 
+                                first_write === 2 ? (wb_ra_val + 8) << 4 
+                                first_write === 3 ? : 0;
+    wire wb_mem_bank_waddr_1 = wb_stall_state === 0 ? 
+                                wb_stall_state === 1 ? 
+                                wb_stall_state === 2 ?
+                                wb_stall_state === 3 ? : ;
+    wire wb_mem_bank_waddr_2 = wb_stall_state === 0 ? 
+                                wb_stall_state === 1 ? 
+                                wb_stall_state === 2 ?
+                                wb_stall_state === 3 ? : ;
+    wire wb_mem_bank_waddr_3 = wb_stall_state === 0 ? 
+                                wb_stall_state === 1 ? 
+                                wb_stall_state === 2 ?
+                                wb_stall_state === 3 ? : ;
+
     reg[255:0] wb_vec_reg;
     wire wb_vreg_mem_wen;
 
