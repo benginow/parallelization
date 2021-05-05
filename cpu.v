@@ -113,12 +113,11 @@ module main();
             //when we jump, we set the pc in writeback to be 
             f1_pc <= wb_take_jump ? wb_scalar_output : f1_pc + 2;
             //if we are flushing, we want the next guy to be invalid
-            f2_valid <= f1_valid;
         end
     end
 
     //==========================FETCH 2==========================
-    reg[15:0] f2_pc = 16'hffff;
+    reg[15:0] f2_pc;
     wire f2_stall = d_stall;
     reg f2_valid = 0;
     
@@ -131,7 +130,7 @@ module main();
     end
 
     //==========================DECODE==========================
-    reg[15:0] d_pc = 16'hffff;
+    reg[15:0] d_pc;
     wire d_stall = fr_stall;
     reg d_valid = 0;
     
@@ -202,13 +201,13 @@ module main();
 
     //==========================FETCH REGS==========================
     //uhhhh.. unsure if this stall logic is correct
-    reg[3:0] fr_stall_state = 0;
-    wire[2:0] fr_num_stall_cycles = fr_is_vector_op ? fr_vra_size << 2 + fr_vra_size[1:0] : 0;
-    wire fr_stall = (fr_stall_state === 1) || (fr_stall_state !== 0) || (fr_num_stall_cycles !== 0);
-
     reg fr_valid = 0;
     reg[15:0] fr_pc;
     reg[15:0] fr_ins;
+    
+    reg[3:0] fr_stall_state = 0;
+    wire[2:0] fr_num_stall_cycles = fr_is_vector_op ? fr_vra_size << 2 + fr_vra_size[1:0] : 0;
+    wire fr_stall = fr_valid && (fr_stall_state === 1) || (fr_stall_state !== 0) || (fr_num_stall_cycles !== 0);
 
     reg[3:0] fr_ra;
     reg[3:0] fr_rx;
@@ -554,8 +553,6 @@ module main();
     // reg[3:0] wb_stall_cycle <= wb_is_vst ? wb_
     // wire wb_stall = wb_is_vst;
     // wire wb_stuck;
-
-
     /*
         MEMORY
     */

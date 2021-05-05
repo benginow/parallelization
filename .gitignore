@@ -5,10 +5,10 @@
 *.time
 *.cycles
 *.vcd
-testing/*.out
-testing/*.diff
-testing/*.raw
-testing/*.result
-testing/*.time
-testing/*.cycles
-testing/*.vcd
+./testing/*.out
+./testing/*.diff
+./testing/*.raw
+./testing/*.result
+./testing/*.time
+./testing/*.cycles
+./testing/*.vcd
