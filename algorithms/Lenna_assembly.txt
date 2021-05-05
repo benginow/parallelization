@@ -1,0 +1,328 @@
+movl r1,220
+movl r2,1
+movl r4,100
+st r4,r1
+add r1, r1,r2
+movl r4,83
+st r4,r1
+add r1, r1,r2
+movl r4,86
+st r4,r1
+add r1, r1,r2
+movl r4,100
+st r4,r1
+add r1, r1,r2
+movl r4,132
+st r4,r1
+add r1, r1,r2
+movl r4,148
+st r4,r1
+add r1, r1,r2
+movl r4,131
+st r4,r1
+add r1, r1,r2
+movl r4,125
+st r4,r1
+add r1, r1,r2
+movl r4,103
+st r4,r1
+add r1, r1,r2
+movl r4,93
+st r4,r1
+add r1, r1,r2
+movl r3,220
+vld vr1,r3,10
+movl r4,90
+st r4,r1
+add r1, r1,r2
+movl r4,97
+st r4,r1
+add r1, r1,r2
+movl r4,108
+st r4,r1
+add r1, r1,r2
+movl r4,98
+st r4,r1
+add r1, r1,r2
+movl r4,110
+st r4,r1
+add r1, r1,r2
+movl r4,143
+st r4,r1
+add r1, r1,r2
+movl r4,135
+st r4,r1
+add r1, r1,r2
+movl r4,100
+st r4,r1
+add r1, r1,r2
+movl r4,118
+st r4,r1
+add r1, r1,r2
+movl r4,139
+st r4,r1
+add r1, r1,r2
+movl r3,230
+vld vr2,r3,10
+movl r4,111
+st r4,r1
+add r1, r1,r2
+movl r4,96
+st r4,r1
+add r1, r1,r2
+movl r4,112
+st r4,r1
+add r1, r1,r2
+movl r4,97
+st r4,r1
+add r1, r1,r2
+movl r4,72
+st r4,r1
+add r1, r1,r2
+movl r4,105
+st r4,r1
+add r1, r1,r2
+movl r4,130
+st r4,r1
+add r1, r1,r2
+movl r4,114
+st r4,r1
+add r1, r1,r2
+movl r4,114
+st r4,r1
+add r1, r1,r2
+movl r4,115
+st r4,r1
+add r1, r1,r2
+movl r3,240
+vld vr3,r3,10
+movl r1,250
+movl r2,1
+movl r4,119
+st r4,r1
+add r1, r1,r2
+movl r4,85
+st r4,r1
+add r1, r1,r2
+movl r4,92
+st r4,r1
+add r1, r1,r2
+movl r4,97
+st r4,r1
+add r1, r1,r2
+movl r4,136
+st r4,r1
+add r1, r1,r2
+movl r4,154
+st r4,r1
+add r1, r1,r2
+movl r4,138
+st r4,r1
+add r1, r1,r2
+movl r4,139
+st r4,r1
+add r1, r1,r2
+movl r4,113
+st r4,r1
+add r1, r1,r2
+movl r4,80
+st r4,r1
+add r1, r1,r2
+movl r3,250
+vld vr4,r3,10
+movl r4,100
+st r4,r1
+add r1, r1,r2
+movl r4,97
+st r4,r1
+add r1, r1,r2
+movl r4,93
+st r4,r1
+add r1, r1,r2
+movl r4,81
+st r4,r1
+add r1, r1,r2
+movl r4,101
+st r4,r1
+add r1, r1,r2
+movl r4,146
+st r4,r1
+add r1, r1,r2
+movl r4,138
+st r4,r1
+add r1, r1,r2
+movl r4,90
+st r4,r1
+add r1, r1,r2
+movl r4,123
+st r4,r1
+add r1, r1,r2
+movl r4,165
+st r4,r1
+add r1, r1,r2
+movl r3,260
+vld vr5,r3,10
+movl r4,120
+st r4,r1
+add r1, r1,r2
+movl r4,92
+st r4,r1
+add r1, r1,r2
+movl r4,56
+st r4,r1
+add r1, r1,r2
+movl r4,70
+st r4,r1
+add r1, r1,r2
+movl r4,68
+st r4,r1
+add r1, r1,r2
+movl r4,109
+st r4,r1
+add r1, r1,r2
+movl r4,141
+st r4,r1
+add r1, r1,r2
+movl r4,115
+st r4,r1
+add r1, r1,r2
+movl r4,136
+st r4,r1
+add r1, r1,r2
+movl r4,138
+st r4,r1
+add r1, r1,r2
+movl r3,270
+vld vr6,r3,10
+movl r1,280
+movl r2,1
+movl r4,215
+st r4,r1
+add r1, r1,r2
+movl r4,186
+st r4,r1
+add r1, r1,r2
+movl r4,199
+st r4,r1
+add r1, r1,r2
+movl r4,203
+st r4,r1
+add r1, r1,r2
+movl r4,205
+st r4,r1
+add r1, r1,r2
+movl r4,206
+st r4,r1
+add r1, r1,r2
+movl r4,211
+st r4,r1
+add r1, r1,r2
+movl r4,214
+st r4,r1
+add r1, r1,r2
+movl r4,179
+st r4,r1
+add r1, r1,r2
+movl r4,160
+st r4,r1
+add r1, r1,r2
+movl r3,280
+vld vr7,r3,10
+movl r4,196
+st r4,r1
+add r1, r1,r2
+movl r4,190
+st r4,r1
+add r1, r1,r2
+movl r4,169
+st r4,r1
+add r1, r1,r2
+movl r4,149
+st r4,r1
+add r1, r1,r2
+movl r4,169
+st r4,r1
+add r1, r1,r2
+movl r4,218
+st r4,r1
+add r1, r1,r2
+movl r4,194
+st r4,r1
+add r1, r1,r2
+movl r4,145
+st r4,r1
+add r1, r1,r2
+movl r4,188
+st r4,r1
+add r1, r1,r2
+movl r4,223
+st r4,r1
+add r1, r1,r2
+movl r3,290
+vld vr8,r3,10
+movl r4,190
+st r4,r1
+add r1, r1,r2
+movl r4,165
+st r4,r1
+add r1, r1,r2
+movl r4,95
+st r4,r1
+add r1, r1,r2
+movl r4,119
+st r4,r1
+add r1, r1,r2
+movl r4,178
+st r4,r1
+add r1, r1,r2
+movl r4,226
+st r4,r1
+add r1, r1,r2
+movl r4,202
+st r4,r1
+add r1, r1,r2
+movl r4,178
+st r4,r1
+add r1, r1,r2
+movl r4,202
+st r4,r1
+add r1, r1,r2
+movl r4,189
+st r4,r1
+add r1, r1,r2
+movl r3,300
+vld vr9,r3,10
+movl r1,310
+movl r2,1
+movl r4,3
+st r4,r1
+add r1, r1,r2
+movl r4,3
+st r4,r1
+add r1, r1,r2
+movl r4,3
+st r4,r1
+add r1, r1,r2
+movl r4,3
+st r4,r1
+add r1, r1,r2
+movl r4,3
+st r4,r1
+add r1, r1,r2
+movl r4,3
+st r4,r1
+add r1, r1,r2
+movl r4,3
+st r4,r1
+add r1, r1,r2
+movl r4,3
+st r4,r1
+add r1, r1,r2
+movl r4,3
+st r4,r1
+add r1, r1,r2
+movl r4,3
+st r4,r1
+add r1, r1,r2
+movl r3,310
+vld vr10,r3,10
