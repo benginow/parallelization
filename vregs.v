@@ -23,8 +23,8 @@ module vregs(input clk,
     assign rData0 = data[rAddr0];
     assign rData1 = data[rAddr1];
 
-    assign rLen0 = dataLen[rAddr0];
-    assign rLen1 = dataLen[rAddr1];
+    assign r_len0 = dataLen[rAddr0];
+    assign r_len1 = dataLen[rAddr1];
 
     always @(posedge clk) begin
         if (wEn) begin

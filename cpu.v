@@ -31,24 +31,25 @@ module main();
     //vector register file - 1 clock latency
     wire [3:0]vreg_raddr0;
     wire [255:0]vreg_data0;
-    wire [15:0]vreg_len0;
+    wire [3:0]vreg_len0;
     wire [3:0]vreg_raddr1;
     wire [255:0]vreg_data1;
-    wire [15:0]vreg_len1;
+    wire [3:0]vreg_len1;
     wire vreg_wen;
     wire [3:0]vreg_waddr;
+    wire [3:0]vreg_wlen;
     wire [255:0]vreg_wdata;
-    regs vregs(clk,
+    vregs vregs(clk,
         vreg_raddr0, vreg_data0, vreg_len0,
         vreg_raddr1, vreg_data1, vreg_len1,
-        vreg_wen, vreg_waddr, vreg_wdata);
+        vreg_wen, vreg_waddr, vreg_wlen, vreg_wdata);
 
     
     //instr mem - 2 clock latency
     wire [15:0]instr_mem_raddr;
     wire [15:0]instr_mem_data;
     assign instr_mem_raddr = f1_pc;
-    instr_bank instr_mem(clk,
+    instr_mem instr_bank(clk,
         instr_mem_raddr[15:1], instr_mem_data);
 
     /* Data Memory
@@ -60,7 +61,8 @@ module main();
     wire[15:0] mem_bank_0_raddr;
     wire[15:0] mem_bank_0_data;
     wire[15:0] mem_bank_0_waddr;
-    mem_bank0 mem(clk,
+    wire[15:0] mem_bank_0_wdata;
+    mem mem_bank0(clk,
         mem_bank_0_raddr[15:1], mem_bank_0_data,
         mem_bank_0_wen, mem_bank_0_waddr[15:1], mem_bank_0_wdata);
 
@@ -68,7 +70,8 @@ module main();
     wire[15:0] mem_bank_1_raddr;
     wire[15:0] mem_bank_1_data;
     wire[15:0] mem_bank_1_waddr;
-    mem_bank1 mem(clk,
+    wire[15:0] mem_bank_1_wdata;
+    mem mem_bank1(clk,
         mem_bank_1_raddr[15:1], mem_bank_1_data,
         mem_bank_1_wen, mem_bank_1_waddr[15:1], mem_bank_1_wdata);
 
@@ -76,7 +79,8 @@ module main();
     wire[15:0] mem_bank_2_raddr;
     wire[15:0] mem_bank_2_data;
     wire[15:0] mem_bank_2_waddr;
-    mem_bank2 mem(clk,
+    wire[15:0] mem_bank_2_wdata;
+    mem mem_bank2(clk,
         mem_bank_2_raddr[15:1], mem_bank_2_data,
         mem_bank_2_wen, mem_bank_2_waddr[15:1], mem_bank_2_wdata);
 
@@ -84,7 +88,8 @@ module main();
     wire[15:0] mem_bank_3_raddr;
     wire[15:0] mem_bank_3_data;
     wire[15:0] mem_bank_3_waddr;
-    mem_bank3 mem(clk,
+    wire[15:0] mem_bank_3_wdata;
+    mem mem_bank3(clk,
         mem_bank_3_raddr[15:1], mem_bank_3_data,
         mem_bank_3_wen, mem_bank_3_waddr[15:1], mem_bank_3_wdata);
 
@@ -99,10 +104,11 @@ module main();
     wire f1_valid = 1;
     //we want to stall for vector operations
     //when we stall, we just want to sent the same values back
-    wire f1_stall = 2_stall;
+    wire f1_stall = f2_stall;
+
 
     always @(posedge clk) begin
-        if (!flush && !stall) begin
+        if (!flush && !f1_stall) begin
             //if we are not jumping, no need to do anything fancy
             //when we jump, we set the pc in writeback to be 
             f1_pc <= wb_take_jump ? wb_scalar_output : f1_pc + 2;
@@ -117,9 +123,10 @@ module main();
     reg f2_valid = 0;
     
     always @(posedge clk) begin
-        if (!stall) begin
+        if (!f2_stall) begin
             f2_pc <= f1_pc;
-            f2_valid <= f1_flush ? 1 : f1_valid;
+            //f2_valid <= f1_valid && !flush;
+            f2_valid <= flush ? 0 : f1_valid;
         end
     end
 
@@ -130,10 +137,8 @@ module main();
     
     //newly gathered information
     wire[15:0] d_ins = instr_mem_data;
-    //if we do need to stall b/c of a vector op, we want to 
-    //know how many cycles to stall for
-    //div by 4, then, if the last two bits aren't 0, add 1
-    reg[3:0] d_stall_cycle = 0;
+    wire[3:0] d_opcode = d_ins[15:12];
+    wire[3:0] d_subcode = d_ins[7:4];
 
     reg[15:0] d_last_ins;
 
@@ -152,7 +157,7 @@ module main();
     wire d_is_jns = d_is_jmp && d_subcode == 3;
 
     wire d_is_scalar_mem = d_opcode == 4'b0100;
-    wire d_is_mem = (d_isScalarMem) || 
+    wire d_is_mem = (d_is_scalar_mem) || 
                 (d_opcode == 4'b1100) ||
                 (d_opcode == 4'b1101);
     wire d_is_ld = d_is_mem && d_subcode == 0;
@@ -166,9 +171,9 @@ module main();
     wire d_is_vld = d_opcode == 4'b1110;
     wire d_is_vst = d_opcode == 4'b1101;
 
-    wire d_is_vdot = d_opcode == 4'1110;
+    wire d_is_vdot = d_opcode == 4'b1110;
 
-    wire d_is_halt = d_opcode == 4'1111;
+    wire d_is_halt = d_opcode == 4'b1111;
     
     wire d_is_vector_op = d_is_vadd || d_is_vsub || d_is_vmul || d_is_vdiv || d_is_vld || d_is_vst || d_is_vdot;
 
@@ -202,11 +207,11 @@ module main();
     wire fr_stall = (fr_stall_state === 1) || (fr_stall_state !== 0) || (fr_num_stall_cycles !== 0);
 
     reg fr_valid = 0;
-    reg fr_pc;
-    reg fr_ins;
+    reg[15:0] fr_pc;
+    reg[15:0] fr_ins;
 
-    reg fr_ra;
-    reg fr_rx;
+    reg[3:0] fr_ra;
+    reg[3:0] fr_rx;
 
     //we don't care too much about decoding everything
     reg fr_is_vector_op;
@@ -214,8 +219,8 @@ module main();
     wire[15:0] fr_ra_val = reg_data0;
     wire[15:0] fr_rx_val = reg_data1;
 
-    wire[2:0] fr_vra_size = vreg_len0;
-    wire[2:0] fr_vrx_size = vreg_len0;
+    wire[3:0] fr_vra_size = vreg_len0;
+    wire[3:0] fr_vrx_size = vreg_len0;
     wire[255:0] fr_vra_val = vreg_data0;
     wire[255:0] fr_vrx_val = vreg_data1;
 
@@ -270,37 +275,35 @@ module main();
     wire[15:0] pipe_0_ra_val = fr_is_vector_op ?
                                (fr_stall_state == 0 ? vra_entry0:
                                 fr_stall_state == 1 ? vra_entry4:
-                                fr_stallState == 2 ? vra_entry8:
-                                fr_stallState == 3 ? vra_entry12 : 0): fr_ra_val;
+                                fr_stall_state == 2 ? vra_entry8:
+                                fr_stall_state == 3 ? vra_entry12 : 0): fr_ra_val;
     wire[15:0] pipe_0_rx_val = fr_is_vector_op ? 
-                               (fr_stallState == 0 ? vrx_entry0:
-                                fr_stallState == 1 ? vrx_entry4:
-                                fr_stallState == 2 ? vrx_entry8:
-                                fr_stallState == 3 ? vrx_entry12 : 0): fr_rx_val;
+                               (fr_stall_state == 0 ? vrx_entry0:
+                                fr_stall_state == 1 ? vrx_entry4:
+                                fr_stall_state == 2 ? vrx_entry8:
+                                fr_stall_state == 3 ? vrx_entry12 : 0): fr_rx_val;
 
     //this is the ra val we want to percolate for scalars
-    wire[15:0] 
+    //TODO: MAKE SURE ALL IS WELL HERE
+    //wire[15:0] 
     wire[15:0] x2_mem_0 = mem_bank_0_data;
     wire[15:0] x2_pipe_0_result;
     //we haven't quite dealt with this yet
     wire[15:0] x2_overflow_0;
-    wire x2_valid;
-    wire 
 
-    alu pipe_0(clk, flush, fr_valid, fr_pc, fr_ins, pipe_0_ra_val, pipe_0_rx_val,
-        x2_mem_0, x2_pipe_0_result, x2_overflow_0, x2_valid, x2_ins, x2_pc,
-        x2_ra_val_0, x2_rx_val_0, x2_rx);
+    alu pipe_0(clk, fr_pc, fr_ins, pipe_0_ra_val, pipe_0_rx_val,
+        x2_mem_0, x2_pipe_0_result, x2_overflow_0);
 
     wire[15:0] pipe_1_ra_val = fr_is_vector_op ? 
-                               (fr_stallState == 0 ? vra_entry1:
-                                fr_stallState == 1 ? vra_entry5:
-                                fr_stallState == 2 ? vra_entry10:
-                                fr_stallState == 3 ? vra_entry13:0): fr_ra_val;
+                               (fr_stall_state == 0 ? vra_entry1:
+                                fr_stall_state == 1 ? vra_entry5:
+                                fr_stall_state == 2 ? vra_entry10:
+                                fr_stall_state == 3 ? vra_entry13:0): fr_ra_val;
     wire[15:0] pipe_1_rx_val = fr_is_vector_op ? 
-                               (fr_stallState == 0 ? vrx_entry1:
-                                fr_stallState == 1 ? vrx_entry5:
-                                fr_stallState == 2 ? vrx_entry10:
-                                fr_stallState == 3 ? vrx_entry13:0): fr_rx_val;
+                               (fr_stall_state == 0 ? vrx_entry1:
+                                fr_stall_state == 1 ? vrx_entry5:
+                                fr_stall_state == 2 ? vrx_entry10:
+                                fr_stall_state == 3 ? vrx_entry13:0): fr_rx_val;
 
     wire pipe_1_valid = fr_is_vector_op;
     wire[15:0] x2_pipe_1_result;
@@ -311,33 +314,40 @@ module main();
         x2_mem_1, x2_pipe_1_result, x2_overflow_1);
 
     wire[15:0] pipe_2_ra_val = fr_is_vector_op ? 
-                               (fr_stallState == 0 ? vra_entry2:
-                                fr_stallState == 1 ? vra_entry6:
-                                fr_stallState == 2 ? vra_entry11:
-                                fr_stallState == 3 ? vra_entry14:0): fr_ra_val;
+                               (fr_stall_state == 0 ? vra_entry2:
+                                fr_stall_state == 1 ? vra_entry6:
+                                fr_stall_state == 2 ? vra_entry11:
+                                fr_stall_state == 3 ? vra_entry14:0): fr_ra_val;
     wire[15:0] pipe_2_rx_val = fr_is_vector_op ? 
-                               (fr_stallState == 0 ? vrx_entry2:
-                                fr_stallState == 1 ? vrx_entry6:
-                                fr_stallState == 2 ? vrx_entry11:
-                                fr_stallState == 3 ? vrx_entry14:0): fr_rx_val;
+                               (fr_stall_state == 0 ? vrx_entry2:
+                                fr_stall_state == 1 ? vrx_entry6:
+                                fr_stall_state == 2 ? vrx_entry11:
+                                fr_stall_state == 3 ? vrx_entry14:0): fr_rx_val;
 
     wire pipe_2_valid = fr_is_vector_op;
     wire[15:0] x2_pipe_2_result;
     wire[15:0] x2_mem_2 = mem_bank_2_data;
     wire[15:0] x2_overflow_2;
-    alu pipe_2(clk, flush, fr_ins, pipe_2_ra_val, pipe_2_rx_val,    
-        x2_mem_2, x2_pipe_2_result, x2_overflow_2, x2_valid, x2_ins, x2_pc);
+    alu pipe_2(clk, fr_pc, fr_ins, pipe_2_ra_val, pipe_2_rx_val,
+        x2_mem_2, x2_pipe_2_result, x2_overflow_2);
 
     wire[15:0] pipe_3_ra_val = fr_is_vector_op ? 
-                               (fr_stallState == 0 ? vra_entry3:
-                                fr_stallState == 1 ? vra_entry7:
-                                fr_stallState == 2 ? vra_entry12:
-                                fr_stallState == 3 ? vra_entry15:0): fr_ra_val;
+                               (fr_stall_state == 0 ? vra_entry3:
+                                fr_stall_state == 1 ? vra_entry7:
+                                fr_stall_state == 2 ? vra_entry12:
+                                fr_stall_state == 3 ? vra_entry15:0): fr_ra_val;
     wire[15:0] pipe_3_rx_val = fr_is_vector_op ? 
-                               (fr_stallState == 0 ? vrx_entry3:
-                                fr_stallState == 1 ? vrx_entry7:
-                                fr_stallState == 2 ? vrx_entry12:
-                                fr_stallState == 3 ? vrx_entry15:0): fr_rx_val;
+                               (fr_stall_state == 0 ? vrx_entry3:
+                                fr_stall_state == 1 ? vrx_entry7:
+                                fr_stall_state == 2 ? vrx_entry12:
+                                fr_stall_state == 3 ? vrx_entry15:0): fr_rx_val;
+
+    wire pipe_3_valid = fr_is_vector_op;
+    wire[15:0] x2_pipe_3_result;
+    wire[15:0] x2_mem_3 = mem_bank_3_data;
+    wire[15:0] x2_overflow_3;
+    alu pipe_3(clk, fr_pc, fr_ins, pipe_3_ra_val, pipe_3_rx_val,
+        x2_mem_3, x2_pipe_3_result, x2_overflow_3);
     
 
     //==========================EXECUTE/EXECUTE2==========================
@@ -346,24 +356,32 @@ module main();
     reg[15:0] x_ins;
     reg x_valid = 0;
     reg[3:0] x_ra;
-    reg[3:0] x_stall_cycles;
+    reg[3:0] x_stall_state;
 
     reg[15:0] x2_pc;
     reg[15:0] x2_ins;
-    reg x2_valid = 0; 
-    reg[3:0] x2_rx;
+    reg x2_valid = 0;
     reg[3:0] x2_ra;
-    reg[3:0] x2_stall_cycles;
+    reg[3:0] x2_stall_state;
+
+    reg[3:0] x_vra_size;
+    reg[3:0] x_vrx_size;
+    reg[3:0] x2_vra_size;
+    reg[3:0] x2_vrx_size;
 
     always @(posedge clk) begin
         x_pc <= fr_pc;
         x2_pc <= x_pc;
         x_valid <= fr_valid && !flush;
-        x_vra_len <= fr_vra_size;
-        x2_vra_len <= x_vra_len;
         x2_valid <= x_valid && !flush;
-        x_stall_cycles <= fr_stall_cycles;
-        x2_stall_cycles <= x_stall_cycles;
+        x_stall_state <= fr_stall_state;
+        x2_stall_state <= x_stall_state;
+
+        x_vra_size <= fr_vra_size;
+        x_vrx_size <= fr_vrx_size;
+
+        x2_vra_size <= x_vra_size;
+        x2_vrx_size <= x_vrx_size;
     end
 
     //==========================COALESCE==========================
@@ -371,8 +389,10 @@ module main();
     reg c_valid = 0;
     reg [15:0]c_pc;
     reg [3:0]c_ins;
-    reg [3:0]c_stall_cycle;
+    reg [3:0]c_stall_state;
     wire [3:0]c_opcode = c_ins[15:12];
+
+    wire c_stall = wb_stall;
 
     reg[15:0] c_scalar_output;
     reg[15:0] c_pipe_0_result;
@@ -400,9 +420,12 @@ module main();
     reg[15:0] c_temp_vector_15;
     reg[15:0] c_temp_vector_16;
 
+    reg[3:0] c_vra_size;
+    reg[3:0] c_vrx_size;
+
 
     always @(posedge clk) begin
-        if (c_stall) begin
+        if (!c_stall) begin
 
             c_temp_vector_0 <= c_stall_state === 0 ? c_pipe_0_result : c_temp_vector_0;
             c_temp_vector_4 <= c_stall_state === 0 ? c_pipe_1_result : c_temp_vector_4;
@@ -428,13 +451,16 @@ module main();
             c_pc <= x2_pc;
             c_ins = c_ins;
 
-            c_stall_cycle <= x2_stall_cycle;
+            c_stall_state <= x2_stall_state;
 
             c_scalar_output <= x2_pipe_0_result;
             c_pipe_0_result <= x2_pipe_0_result;
             c_pipe_1_result <= x2_pipe_1_result;
             c_pipe_2_result <= x2_pipe_2_result;
             c_pipe_3_result <= x2_pipe_3_result;
+
+            c_vra_size <= x2_vra_size;
+            c_vrx_size <= x2_vrx_size;
 
 
 
@@ -469,7 +495,7 @@ module main();
     wire wb_is_js = d_is_jmp && d_subcode == 2;
     wire wb_is_jns = d_is_jmp && d_subcode == 3;
     wire wb_is_scalar_mem = d_opcode == 4'b0100;
-    wire wb_is_mem = (d_isScalarMem) || 
+    wire wb_is_mem = (d_is_scalar_mem) || 
                 (d_opcode == 4'b1100) ||
                 (d_opcode == 4'b1101);
     wire wb_is_ld = d_is_mem && d_subcode == 0;
@@ -480,8 +506,8 @@ module main();
     wire wb_is_vdiv = d_opcode == 4'b1011;
     wire wb_is_vld = d_opcode == 4'b1110;
     wire wb_is_vst = d_opcode == 4'b1101;
-    wire wb_is_vdot = d_opcode == 4'1110;
-    wire wb_is_halt = d_opcode == 4'1111;
+    wire wb_is_vdot = d_opcode == 4'b1110;
+    wire wb_is_halt = d_opcode == 4'b1111;
     wire wb_is_vector_op = wb_is_vadd || wb_is_vsub || wb_is_vmul || wb_is_vdiv || wb_is_vld || wb_is_vst || wb_is_vdot;
     wire wb_is_invalid_op = !(wb_is_add | wb_is_sub | wb_is_mul | wb_is_div |
         wb_is_movl | wb_is_movh | wb_is_ld | wb_is_st |
@@ -494,12 +520,10 @@ module main();
         DECISION MAKING
     */
     wire wb_flush = (wb_valid && wb_take_jump);
-    wire wb_take_jump =  (wb_isJz) ? (wb_ra_val == 0 ? 1 :0):
-                        (wb_isJnz) ? (wb_ra_val != 0 ? 1 : 0):
-                        (wb_isJs) ? (wb_ra_val[15] ? 1 : 0):
-                        (wb_isJns) ? (!wb_ra_val[15] ? 1 : 0) : 0;
-    wire wb_flush = wb_take_jump && wb_valid;
-
+    wire wb_take_jump =  (wb_is_jz) ? (wb_ra_val == 0 ? 1 :0):
+                        (wb_is_jnz) ? (wb_ra_val != 0 ? 1 : 0):
+                        (wb_is_js) ? (wb_ra_val[15] ? 1 : 0):
+                        (wb_is_jns) ? (!wb_ra_val[15] ? 1 : 0) : 0;
 
     /*
         WRITING TO REG
@@ -519,21 +543,28 @@ module main();
     assign vreg_wdata = wb_vec_reg;
     assign vreg_waddr = wb_rt;
 
-    
-    reg[3:0] wb_stall_cycle <= wb_is_vst ? wb_
-    wire wb_stall = wb_is_vst;
-    wire wb_stuck;
+    //WE NEED TO FORWARD THESE BADD BOYS
+    reg[3:0] wb_vra_size;
+    reg[3:0] wb_vrx_size;
+
+    reg[3:0] wb_stall_state = 0;
+    wire[2:0] wb_num_stall_cycles = wb_is_vector_op ? wb_vra_size << 2 + wb_vra_size[1:0] : 0;
+    wire wb_stall = (wb_stall_state === 1) || (wb_stall_state !== 0) || (wb_num_stall_cycles !== 0);
+
+    // reg[3:0] wb_stall_cycle <= wb_is_vst ? wb_
+    // wire wb_stall = wb_is_vst;
+    // wire wb_stuck;
 
 
     /*
         MEMORY
     */
-    wire wb_mem_bank_wen_0  = (wb_is_vst || (wb_isSt && ((wb_ra_val % 4) === 0)) );
-    wire wb_mem_bank_wen_1 = (wb_is_vst || (wb_isSt && ((wb_ra_val % 4) === 1)) );
-    wire wb_mem_bank_wen_2 = (wb_is_vst || (wb_isSt && ((wb_ra_val % 4) === 2)) );
-    wire wb_mem_bank_wen_3 = (wb_is_vst || (wb_isSt && ((wb_ra_val % 4) === 3)) );
-    
-    wire[255:0] wb_vec_reg;
+    wire wb_mem_bank_wen_0  = (wb_is_vst || (wb_is_st && ((wb_ra_val % 4) === 0)) );
+    wire wb_mem_bank_wen_1 = (wb_is_vst || (wb_is_st && ((wb_ra_val % 4) === 1)) );
+    wire wb_mem_bank_wen_2 = (wb_is_vst || (wb_is_st && ((wb_ra_val % 4) === 2)) );
+    wire wb_mem_bank_wen_3 = (wb_is_vst || (wb_is_st && ((wb_ra_val % 4) === 3)) );
+
+    reg[255:0] wb_vec_reg;
     wire wb_vreg_mem_wen;
 
     always @(posedge clk) begin
@@ -543,13 +574,17 @@ module main();
         wb_ins <= c_ins;
         wb_scalar_output <= c_scalar_output;
 
+        wb_vra_size <= c_vra_size;
+        wb_vrx_size <= c_vrx_size;
+
         if (c_stall) begin
             wb_vec_reg <= {c_temp_vector_0, c_temp_vector_1, c_temp_vector_2, 
                             c_temp_vector_3, c_temp_vector_4, c_temp_vector_5, 
                             c_temp_vector_6, c_temp_vector_7, c_temp_vector_8, 
                             c_temp_vector_9, c_temp_vector_10, c_temp_vector_11, 
                             c_temp_vector_12, c_temp_vector_13, c_temp_vector_14, 
-                            c_temp_vector_15}
+                            c_temp_vector_15};
+
             wb_scalar_output <= c_scalar_output;
             
             if (wb_valid) begin
