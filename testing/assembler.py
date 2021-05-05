@@ -35,10 +35,11 @@ def main (file_name):
             l = l.strip()
             if l != "":
                 line.append(l)
-        
+        if len(line) == 0:
+            continue
         ins = line[0]
         opcode = ins_opcode.get(ins)
-        
+       
         if ins == "add" or ins == "sub" or ins == "mul" or ins == "div":
             #add rt,ra,rb
             ra = int(line[2].replace("r",""))
@@ -116,4 +117,4 @@ def main (file_name):
         encoded = encoded.replace("0x","")
         f.write(encoded + "\n")
 
-main ("testing/t02")
+main ("t24")
