@@ -9,7 +9,7 @@ module main();
       
     //clock
     wire clk;
-    clock c0(clk);
+    clock clock(clk);
 
     //counter integrated with halt
     reg halt = 0;
@@ -26,7 +26,7 @@ module main();
     regs regs(clk,
         regRAddr0, regData0,
         regRAddr1, regData1,
-        regWEn, regWAddr, regWData);
+        reg_wen, regWAddr, regWData);
 
     //vector register file - 1 clock latency
     wire [3:0]vregRAddr0;
@@ -97,17 +97,15 @@ module main();
     //=====================FETCH 1=====================
     reg[15:0]f1_pc = 0;
     reg f1_valid = 1;
-    wire f1_stall = 0;
+    wire f1_stall = f2_stall;
 
     //The PC is incremented in the writeback stage
     always @(posedge clk) begin
-
-        // 
-        // //TODO: work on the flush logic!!
-        // if (!f1_flush) begin
-        //     //if we're flushing, we don't want to keep incrementing
-        //     f1_pc <= f1_pc + 2;
-        // end
+        //when we flush, 
+        if (!stall && !flush) begin
+            f2_pc <= f1_pc;
+            f2_invalid <= f1_flush ? 1 : f1_valid;
+        end
     end 
 
     //=====================FETCH 2=====================
@@ -116,7 +114,6 @@ module main();
     reg f2_valid = 0;
     always @(posedge clk) begin
         f2_pc <= f1_pc;
-        //if f1 is an invalid wire, we want the next to be invalid
         f2_valid <= f1_valid && !flush;
     end 
 
@@ -598,10 +595,8 @@ module main();
     wire wb_isJnz = wb_isJmp && wb_subcode == 1;
     wire wb_isJs = wb_isJmp && wb_subcode == 2;
     wire wb_isJns = wb_isJmp && wb_subcode == 3;
-
     wire wb_isLd = wb_isMem && wb_subcode == 0;
     wire wb_isSt = wb_isMem && wb_subcode == 1;
-    
     wire wb_isVadd = wb_opcode == 4'b1000;
     wire wb_isVsub = wb_opcode == 4'b1001;
     //just multiply each element

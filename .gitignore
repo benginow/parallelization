@@ -1,0 +1,7 @@
+*.out
+*.diff
+*.raw
+*.result
+*.time
+*.cycles
+*.vcd
