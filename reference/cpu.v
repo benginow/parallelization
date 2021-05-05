@@ -39,9 +39,10 @@ module main();
     wire [3:0]vreg_waddr;
     wire [255:0]vreg_wdata;
     regs vregs(clk,
-        vreg_raddr0, vreg_data0,
-        vreg_raddr1, vreg_data1,
+        vreg_raddr0, vreg_data0, vreg_len0,
+        vreg_raddr1, vreg_data1, vreg_len1,
         vreg_wen, vreg_waddr, vreg_wdata);
+
     
     //instr mem - 2 clock latency
     wire [15:0]instr_mem_raddr;
@@ -49,6 +50,11 @@ module main();
     assign instr_mem_raddr = f1_pc;
     instr_bank instr_mem(clk,
         instr_mem_raddr[15:1], instr_mem_data);
+
+    /* Data Memory
+        - Split into 4 banks instead of 1 contiguous module
+        - Bank X will hold addresses where address % 4 = X
+    */
 
     wire mem_bank_0_wen;
     wire[15:0] mem_bank_0_raddr;
@@ -193,7 +199,7 @@ module main();
     //uhhhh.. unsure if this stall logic is correct
     reg[3:0] fr_stall_state = 0;
     wire[2:0] fr_num_stall_cycles = fr_is_vector_op ? fr_vra_size << 2 + fr_vra_size[1:0] : 0;
-    wire fr_stall = (fr_stall_state === 1) || (fr_stall_state !== 0) || (fr_num_stall_cycles != 0);
+    wire fr_stall = (fr_stall_state === 1) || (fr_stall_state !== 0) || (fr_num_stall_cycles !== 0);
 
     reg fr_valid = 0;
     reg fr_pc;
@@ -214,13 +220,13 @@ module main();
     wire[255:0] fr_vrx_val = vreg_data1;
 
     always @(posedge clk) begin
-        fr_stall_state <= fr_is_vector_op ? fr_num_stall_cycles - 1 : 0;
+        fr_stall_state <= (fr_is_vector_op && fr_valid && fr_stall_state === 0) ? fr_num_stall_cycles - 1 :
+                           (fr_is_vector_op && fr_valid) ? fr_stall_state - 1 : 0;
         if (!fr_stall) begin
             fr_valid <= d_valid && !flush;
             fr_pc <= d_pc;
             fr_ins <= d_ins;
             fr_is_vector_op <= d_is_vector_op;
-            
             fr_ra <= d_ra;
             fr_rx <= d_rx;
         end
@@ -294,7 +300,7 @@ module main();
                                (fr_stallState == 0 ? vrx_entry1:
                                 fr_stallState == 1 ? vrx_entry5:
                                 fr_stallState == 2 ? vrx_entry10:
-                                fr_stallState == 3 ? vrx_entry13:0): fr_ra_val;
+                                fr_stallState == 3 ? vrx_entry13:0): fr_rx_val;
 
     wire pipe_1_valid = fr_is_vector_op;
     wire[15:0] x2_pipe_1_result;
@@ -313,7 +319,7 @@ module main();
                                (fr_stallState == 0 ? vrx_entry2:
                                 fr_stallState == 1 ? vrx_entry6:
                                 fr_stallState == 2 ? vrx_entry11:
-                                fr_stallState == 3 ? vrx_entry14:0): fr_ra_val;
+                                fr_stallState == 3 ? vrx_entry14:0): fr_rx_val;
 
     wire pipe_2_valid = fr_is_vector_op;
     wire[15:0] x2_pipe_2_result;
@@ -331,7 +337,7 @@ module main();
                                (fr_stallState == 0 ? vrx_entry3:
                                 fr_stallState == 1 ? vrx_entry7:
                                 fr_stallState == 2 ? vrx_entry12:
-                                fr_stallState == 3 ? vrx_entry15:0): fr_ra_val;
+                                fr_stallState == 3 ? vrx_entry15:0): fr_rx_val;
     
 
     //==========================EXECUTE/EXECUTE2==========================
