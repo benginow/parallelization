@@ -241,6 +241,9 @@ module main();
     reg [15:0]fr_pc;
     reg [15:0]fr_ins;
 
+    reg [3:0] fr_ra_read;
+    reg [3:0] fr_rx_read;
+
     wire[3:0] fr_ra = fr_ins[11:8]; //always needed
     wire[3:0] fr_rb = fr_ins[7:4];
     wire[3:0] fr_rt = fr_ins[3:0];
@@ -252,6 +255,8 @@ module main();
     //max sure we return 0 if its 0
     wire[15:0] fr_ra_val = (fr_ra == 0) ? 0 : regData0;
     wire[15:0] fr_rx_val = (fr_rx == 0) ? 0 : regData1;
+
+    
 
     //TODO: vregs size functionality
     wire[2:0] fr_vra_len = vregData0Len;
@@ -271,6 +276,8 @@ module main();
         fr_valid <= d_valid && !flush;
         fr_pc <= d_pc;
         fr_ins <= d_ins;
+        fr_ra_read <= d_ra;
+        fr_rx_read <= d_rx;
     end
 
     // we will have four pipelines
@@ -412,6 +419,8 @@ module main();
     reg [15:0] x_target_entries;
     reg [15:0] x_ra_val;
     reg [15:0] x_rx_val;
+    reg [3:0] x_ra_read;
+    reg [3:0] x_rx_read;
     
     reg [15:0] x2_pc;
     reg [15:0] x2_ins;
@@ -420,6 +429,8 @@ module main();
     reg [15:0] x2_target_entries;
     reg [15:0] x2_ra_val;
     reg [15:0] x2_rx_val;
+    reg [3:0] x2_ra_read;
+    reg [3:0] x2_rx_read;
 
     always @(posedge clk) begin
         x_pc <= fr_pc;
@@ -429,6 +440,8 @@ module main();
         x_target_entries <= fr_stall_state;
         x_ra_val <= fr_ra_val;
         x_rx_val <= fr_rx_val;
+        x_ra_read <= fr_ra_read;
+        x_rx_read <= fr_rx_read;
 
         x2_pc <= x_pc;
         x2_ins <= x_ins;
@@ -438,6 +451,8 @@ module main();
 
         x2_ra_val <= x_ra_val;
         x2_rx_val <= x_rx_val;
+        x2_ra_read <= x_ra_read;
+        x2_rx_read <= x_rx_read;
     end
 
     //================================COALESCE============================================
@@ -497,6 +512,9 @@ module main();
     reg[15:0] c_ra_val;
     reg[15:0] c_rx_val;
 
+    reg [3:0] c_ra_read;
+    reg [3:0] c_rx_read;
+
     //handle dot product
     //Design decision: vector length
     wire c_ins_changing = x2_pc != c_pc;
@@ -525,6 +543,9 @@ module main();
 
         c_ra_val <= x2_ra_val;
         c_rx_val <= x2_rx_val;
+
+        c_ra_read <= x2_ra_read;
+        c_rx_read <= x2_rx_read;
         
         c_pipe_0_result <= x2_pipe_0_result;
         c_pipe_1_result <= x2_pipe_1_result;
@@ -634,7 +655,6 @@ module main();
                             wb_isVadd | wb_isVsub | wb_isVmul | wb_isVdiv |
                             wb_isVld | wb_isVst | wb_isVdot);
 
-
     reg wb_valid = 0;
     reg [15:0]wb_pc;
     reg [15:0]wb_ins;
@@ -646,8 +666,6 @@ module main();
     wire [3:0]wb_rb = wb_ins[7:4];
     wire [3:0]wb_rt = wb_ins[3:0];
 
-
-
     reg wb_stallCycle;
     
     //wb will stall for vst
@@ -656,13 +674,29 @@ module main();
     wire wb_stall = wb_isVst;
     wire wb_stuck;
 
+    wire scalarRegReadAfterWrite = regWEn && (
+        (((regWAddr === fr_ra_read)) || ((regWAddr === fr_rx_read))) ||
+        (((regWAddr === x_ra_read)) || ((regWAddr === x_rx_read))) ||
+        (((regWAddr === x2_ra_read)) || ((regWAddr === x2_rx_read))) ||
+        (((regWAddr === c_ra_read)) || ((regWAddr === c_rx_read)))
+    );
+
+    // //Check if the mem address we write to is in another stage
+    // wire memReadAfterWrite = writeMem && (
+    //     (memRead_M && (memAddr_M === writeAddr)) ||
+    //     (memRead_M2 && (memAddr_M2 === writeAddr)) ||
+    //     (memRead_X && (memAddr_X === writeAddr))
+    // );
+
     wire wb_take_jump =  (wb_isJz) ? (wb_ra == 0 ? 1 :0):
                         (wb_isJnz) ? (wb_ra != 0 ? 1 : 0):
                         (wb_isJs) ? (wb_ra[15] ? 1 : 0):
                         (wb_isJns) ? (!wb_ra[15] ? 1 : 0) : 0;
     
     //TODO: deal with read after writes maybe?
+    // assign flush = (wb_take_jump || scalarRegReadAfterWrite)&& wb_valid;
     assign flush = wb_take_jump && wb_valid;
+
 
     wire wb_is_print = wb_writes_reg && (wb_rt == 0);
                          
