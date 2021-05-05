@@ -96,7 +96,7 @@ module main();
     //global control signal
     //we flush if a jump needs to be taken in wb
     //if we are jumping, then we are flushing
-    wire flush = wb_flush;
+    wire flush;
 
     //==========================FETCH 1==========================
     reg[15:0] f1_pc = 0;
@@ -111,7 +111,7 @@ module main();
         if (!flush && !f1_stall) begin
             //if we are not jumping, no need to do anything fancy
             //when we jump, we set the pc in writeback to be 
-            f1_pc <= wb_take_jump ? wb_scalar_output : f1_pc + 2;
+            f1_pc <= flush ? wb_next_pc : f1_pc + 2;
             //if we are flushing, we want the next guy to be invalid
         end
     end
@@ -207,7 +207,7 @@ module main();
     
     reg[3:0] fr_stall_state = 0;
     wire[2:0] fr_num_stall_cycles = fr_is_vector_op ? fr_vra_size << 2 + fr_vra_size[1:0] : 0;
-    wire fr_stall = fr_valid && (fr_stall_state === 1) || (fr_stall_state !== 0) || (fr_num_stall_cycles !== 0);
+    wire fr_stall = fr_valid && ((fr_stall_state === 1) || (fr_stall_state !== 0) || (fr_num_stall_cycles !== 0));
 
     reg[3:0] fr_ra;
     reg[3:0] fr_rx;
@@ -371,8 +371,13 @@ module main();
     always @(posedge clk) begin
         x_pc <= fr_pc;
         x2_pc <= x_pc;
+
+        x_ins <= fr_ins;
+        x2_ins <= x_ins;
+
         x_valid <= fr_valid && !flush;
         x2_valid <= x_valid && !flush;
+        
         x_stall_state <= fr_stall_state;
         x2_stall_state <= x_stall_state;
 
@@ -387,7 +392,7 @@ module main();
 
     reg c_valid = 0;
     reg [15:0]c_pc;
-    reg [3:0]c_ins;
+    reg [15:0]c_ins;
     reg [3:0]c_stall_state;
     wire [3:0]c_opcode = c_ins[15:12];
 
@@ -448,7 +453,7 @@ module main();
 
             c_valid <= x2_valid && !flush;
             c_pc <= x2_pc;
-            c_ins = c_ins;
+            c_ins <= x2_ins;
 
             c_stall_state <= x2_stall_state;
 
@@ -476,37 +481,40 @@ module main();
     reg[15:0] wb_rx_val;
     reg[15:0] wb_scalar_output;
 
+    wire[3:0] wb_opcode = wb_ins[15:12];
+    wire[3:0] wb_subcode = wb_ins[7:4];
+    
     /*
         DECODING
     */
-    wire[3:0] wb_ra = d_ins[11:8];
-    wire[3:0] wb_rb = d_ins[7:4];
-    wire[3:0] wb_rt = d_ins[3:0];
-    wire wb_is_add = d_opcode == 4'b0000;
-    wire wb_is_sub = d_opcode == 4'b0001;
-    wire wb_is_mul = d_opcode == 4'b0010;
-    wire wb_is_div = d_opcode == 4'b0011;
-    wire wb_is_movl = d_opcode == 4'b0100;
-    wire wb_is_movh = d_opcode == 4'b0101;
-    wire wb_is_jmp = d_opcode == 4'b0110;
-    wire wb_is_jz = d_is_jmp && d_subcode == 0;
-    wire wb_is_jnz = d_is_jmp && d_subcode == 1;
-    wire wb_is_js = d_is_jmp && d_subcode == 2;
-    wire wb_is_jns = d_is_jmp && d_subcode == 3;
-    wire wb_is_scalar_mem = d_opcode == 4'b0100;
-    wire wb_is_mem = (d_is_scalar_mem) || 
-                (d_opcode == 4'b1100) ||
-                (d_opcode == 4'b1101);
-    wire wb_is_ld = d_is_mem && d_subcode == 0;
-    wire wb_is_st = d_is_mem && d_subcode == 1;
-    wire wb_is_vadd = d_opcode == 4'b1000;
-    wire wb_is_vsub = d_opcode == 4'b1001;
-    wire wb_is_vmul = d_opcode == 4'b1010;
-    wire wb_is_vdiv = d_opcode == 4'b1011;
-    wire wb_is_vld = d_opcode == 4'b1110;
-    wire wb_is_vst = d_opcode == 4'b1101;
-    wire wb_is_vdot = d_opcode == 4'b1110;
-    wire wb_is_halt = d_opcode == 4'b1111;
+    wire[3:0] wb_ra = wb_ins[11:8];
+    wire[3:0] wb_rb = wb_ins[7:4];
+    wire[3:0] wb_rt = wb_ins[3:0];
+    wire wb_is_add = wb_opcode == 4'b0000;
+    wire wb_is_sub = wb_opcode == 4'b0001;
+    wire wb_is_mul = wb_opcode == 4'b0010;
+    wire wb_is_div = wb_opcode == 4'b0011;
+    wire wb_is_movl = wb_opcode == 4'b0100;
+    wire wb_is_movh = wb_opcode == 4'b0101;
+    wire wb_is_jmp = wb_opcode == 4'b0110;
+    wire wb_is_jz = wb_is_jmp && wb_subcode == 0;
+    wire wb_is_jnz = wb_is_jmp && wb_subcode == 1;
+    wire wb_is_js = wb_is_jmp && wb_subcode == 2;
+    wire wb_is_jns = wb_is_jmp && wb_subcode == 3;
+    wire wb_is_scalar_mem = wb_opcode == 4'b0100;
+    wire wb_is_mem = (wb_is_scalar_mem) || 
+                (wb_opcode == 4'b1100) ||
+                (wb_opcode == 4'b1101);
+    wire wb_is_ld = wb_is_mem && wb_subcode == 0;
+    wire wb_is_st = wb_is_mem && wb_subcode == 1;
+    wire wb_is_vadd = wb_opcode == 4'b1000;
+    wire wb_is_vsub = wb_opcode == 4'b1001;
+    wire wb_is_vmul = wb_opcode == 4'b1010;
+    wire wb_is_vdiv = wb_opcode == 4'b1011;
+    wire wb_is_vld = wb_opcode == 4'b1110;
+    wire wb_is_vst = wb_opcode == 4'b1101;
+    wire wb_is_vdot = wb_opcode == 4'b1110;
+    wire wb_is_halt = wb_opcode == 4'b1111;
     wire wb_is_vector_op = wb_is_vadd || wb_is_vsub || wb_is_vmul || wb_is_vdiv || wb_is_vld || wb_is_vst || wb_is_vdot;
     wire wb_is_invalid_op = !(wb_is_add | wb_is_sub | wb_is_mul | wb_is_div |
         wb_is_movl | wb_is_movh | wb_is_ld | wb_is_st |
@@ -518,11 +526,13 @@ module main();
     /*
         DECISION MAKING
     */
-    wire wb_flush = (wb_valid && wb_take_jump);
-    wire wb_take_jump =  (wb_is_jz) ? (wb_ra_val == 0 ? 1 :0):
-                        (wb_is_jnz) ? (wb_ra_val != 0 ? 1 : 0):
-                        (wb_is_js) ? (wb_ra_val[15] ? 1 : 0):
-                        (wb_is_jns) ? (!wb_ra_val[15] ? 1 : 0) : 0;
+    // assign flush = wb_valid ? wb_take_jump : 0;
+    wire [15:0] wb_next_pc = wb_is_jmp ? wb_scalar_output : wb_pc + 2;
+    assign flush = wb_valid ? wb_next_pc !== c_pc : 0;
+    // wire wb_take_jump =  (wb_is_jz) ? (wb_ra_val === 0 ? 1 :0):
+    //                     (wb_is_jnz) ? (wb_ra_val !== 0 ? 1 : 0):
+    //                     (wb_is_js) ? (wb_ra_val[15] === 1 ? 1 : 0):
+    //                     (wb_is_jns) ? (wb_ra_val[15] === 0? 1 : 0) : 0;
 
     /*
         WRITING TO REG
@@ -548,7 +558,7 @@ module main();
 
     reg[3:0] wb_stall_state = 0;
     wire[2:0] wb_num_stall_cycles = wb_is_vector_op ? wb_vra_size << 2 + wb_vra_size[1:0] : 0;
-    wire wb_stall = (wb_stall_state === 1) || (wb_stall_state !== 0) || (wb_num_stall_cycles !== 0);
+    wire wb_stall = wb_valid && ((wb_stall_state === 1) || (wb_stall_state !== 0) || (wb_num_stall_cycles !== 0));
 
     // reg[3:0] wb_stall_cycle <= wb_is_vst ? wb_
     // wire wb_stall = wb_is_vst;
@@ -574,7 +584,7 @@ module main();
         wb_vra_size <= c_vra_size;
         wb_vrx_size <= c_vrx_size;
 
-        if (c_stall) begin
+        if (!wb_stall) begin
             wb_vec_reg <= {c_temp_vector_0, c_temp_vector_1, c_temp_vector_2, 
                             c_temp_vector_3, c_temp_vector_4, c_temp_vector_5, 
                             c_temp_vector_6, c_temp_vector_7, c_temp_vector_8, 
