@@ -596,22 +596,46 @@ module main();
 
     //not right
     //wb_ra_val + 4*stall_state
-    wire wb_mem_bank_waddr_0 = first_write === 0 ? (wb_ra_val + 4 * stall_state) 
-                                first_write === 1 ? (wb_ra_val + 4) << 4 
-                                first_write === 2 ? (wb_ra_val + 8) << 4 
-                                first_write === 3 ? : 0;
-    wire wb_mem_bank_waddr_1 = wb_stall_state === 0 ? 
-                                wb_stall_state === 1 ? 
-                                wb_stall_state === 2 ?
-                                wb_stall_state === 3 ? : ;
-    wire wb_mem_bank_waddr_2 = wb_stall_state === 0 ? 
-                                wb_stall_state === 1 ? 
-                                wb_stall_state === 2 ?
-                                wb_stall_state === 3 ? : ;
-    wire wb_mem_bank_waddr_3 = wb_stall_state === 0 ? 
-                                wb_stall_state === 1 ? 
-                                wb_stall_state === 2 ?
-                                wb_stall_state === 3 ? : ;
+    wire wb_mem_bank_waddr_0 = first_write === 0 ? (wb_ra_val + 4 * stall_state) :
+                                first_write === 1 ? (wb_ra_val + 4 * stall_state) + 3 :
+                                first_write === 2 ? (wb_ra_val + 4 * stall_state) + 2 :
+                                first_write === 3 ? (wb_ra_val + 4 * stall_state) + 1: 0;
+
+    wire wb_mem_bank_waddr_1 = first_write === 0 ? (wb_ra_val + 4 * stall_state) + 1:
+                                first_write === 1 ? (wb_ra_val + 4 * stall_state) + 0 :
+                                first_write === 2 ? (wb_ra_val + 4 * stall_state) + 3 :
+                                first_write === 3 ? (wb_ra_val + 4 * stall_state) + 2: 0;
+
+    wire wb_mem_bank_waddr_2 = first_write === 0 ? (wb_ra_val + 4 * stall_state) + 2:
+                                first_write === 1 ? (wb_ra_val + 4 * stall_state) + 1 :
+                                first_write === 2 ? (wb_ra_val + 4 * stall_state) + 0 :
+                                first_write === 3 ? (wb_ra_val + 4 * stall_state) + 3: 0;
+
+    wire wb_mem_bank_waddr_3 = first_write === 0 ? (wb_ra_val + 4 * stall_state) + 3:
+                                first_write === 1 ? (wb_ra_val + 4 * stall_state) + 2 :
+                                first_write === 2 ? (wb_ra_val + 4 * stall_state) + 1 :
+                                first_write === 3 ? (wb_ra_val + 4 * stall_state) + 0: 0;
+
+    //choose based on first store
+    wire wb_mem_bank_wdata_0 = wb_stall_state === 0 ? wb_mem_bank_wdata_04 :
+                                wb_stall_state === 1 ?  wb_mem_bank_wdata_37 : 
+                                wb_stall_state === 2 ? wb_mem_bank_wdata_26 :
+                                wb_stall_state === 3 ?  wb_mem_bank_wdata_15 : 0;
+
+    wire wb_mem_bank_wdata_1 = wb_stall_state === 0 ? wb_mem_bank_wdata_15 :
+                                wb_stall_state === 1 ?  wb_mem_bank_wdata_04 : 
+                                wb_stall_state === 2 ? wb_mem_bank_wdata_37 :
+                                wb_stall_state === 3 ?  wb_mem_bank_wdata_26 : 0;
+
+    wire wb_mem_bank_wdata_2 = wb_stall_state === 0 ? wb_mem_bank_wdata_26 :
+                                wb_stall_state === 1 ?  wb_mem_bank_wdata_15 : 
+                                wb_stall_state === 2 ? wb_mem_bank_wdata_04 :
+                                wb_stall_state === 3 ?  wb_mem_bank_wdata_37 : 0;
+
+    wire wb_mem_bank_wdata_3 = wb_stall_state === 0 ? wb_mem_bank_wdata_36 :
+                                wb_stall_state === 1 ?  wb_mem_bank_wdata_26 : 
+                                wb_stall_state === 2 ? wb_mem_bank_wdata_15 :
+                                wb_stall_state === 3 ?  wb_mem_bank_wdata_04 : 0;
 
     reg[255:0] wb_vec_reg;
     wire wb_vreg_mem_wen;
