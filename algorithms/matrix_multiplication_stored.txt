@@ -1,64 +1,70 @@
 movl r1,220
 movl r2,1
-movl r3,1
-st r3,r1
+movl r4,1
+st r4,r1
 add r1, r1,r2
-movl r3,2
-st r3,r1
+movl r4,2
+st r4,r1
 add r1, r1,r2
-movl r3,3
-st r3,r1
+movl r4,3
+st r4,r1
 add r1, r1,r2
-vld vr1,220,3
-movl r3,4
-st r3,r1
+movl r3,220
+vld vr1,r3,3
+movl r4,4
+st r4,r1
 add r1, r1,r2
-movl r3,5
-st r3,r1
+movl r4,5
+st r4,r1
 add r1, r1,r2
-movl r3,6
-st r3,r1
+movl r4,6
+st r4,r1
 add r1, r1,r2
-vld vr2,223,3
-movl r3,7
-st r3,r1
+movl r3,223
+vld vr2,r3,3
+movl r4,7
+st r4,r1
 add r1, r1,r2
-movl r3,8
-st r3,r1
+movl r4,8
+st r4,r1
 add r1, r1,r2
-movl r3,9
-st r3,r1
+movl r4,9
+st r4,r1
 add r1, r1,r2
-vld vr3,226,3
+movl r3,226
+vld vr3,r3,3
 movl r1,229
 movl r2,1
-movl r3,1
-st r3,r1
+movl r4,1
+st r4,r1
 add r1, r1,r2
-movl r3,1
-st r3,r1
+movl r4,1
+st r4,r1
 add r1, r1,r2
-movl r3,1
-st r3,r1
+movl r4,1
+st r4,r1
 add r1, r1,r2
-vld vr4,229,3
-movl r3,2
-st r3,r1
+movl r3,229
+vld vr4,r3,3
+movl r4,2
+st r4,r1
 add r1, r1,r2
-movl r3,2
-st r3,r1
+movl r4,2
+st r4,r1
 add r1, r1,r2
-movl r3,2
-st r3,r1
+movl r4,2
+st r4,r1
 add r1, r1,r2
-vld vr5,232,3
-movl r3,3
-st r3,r1
+movl r3,232
+vld vr5,r3,3
+movl r4,3
+st r4,r1
 add r1, r1,r2
-movl r3,3
-st r3,r1
+movl r4,3
+st r4,r1
 add r1, r1,r2
-movl r3,3
-st r3,r1
+movl r4,3
+st r4,r1
 add r1, r1,r2
-vld vr6,235,3
+movl r3,235
+vld vr6,r3,3
