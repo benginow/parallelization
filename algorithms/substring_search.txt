@@ -1,0 +1,149 @@
+Algorithm from site:
+
+Algorithm 1: Generic SIMD
+Algorithm
+This algorithm is suitable for all SIMD instruction sets and also SWAR approach. It uses as a predicate equality of the first and the last characters from the substring.
+
+These two characters are populated in two registers, F and L respectively. Then in each iteration two chunks of strings are loaded. The first chunk (A) is read from offset i (where i is the current offset) and the second chunk (B) is read from offset i + k - 1, where k is substring's length.
+
+Then we compute a vector expression F == A and B == L. This step yields a byte vector (or a bit mask), where "true" values denote position of potential substring occurrences. Finally, just at these positions an exact comparisons of substrings are performed.
+
+Example
+Let's assume 8-byte registers. We're searching for word "cat", thus:
+
+F    = [ c | c | c | c | c | c | c | c ]
+L    = [ t | t | t | t | t | t | t | t ]
+We're searching in the string "a_cat_tries". In the first iteration the register A gets data from offset 0, B from offset 2:
+
+A    = [ a | _ | c | a | t | _ | t | r ]
+B    = [ c | a | t | _ | t | r | i | e ]
+Now we compare:
+
+AF   = (A == F)
+     = [ 0 | 0 | 1 | 0 | 0 | 0 | 0 | 0 ]
+
+BL   = (B == L)
+     = [ 0 | 0 | 1 | 0 | 1 | 0 | 0 | 0 ]
+After merging comparison results, i.e. AF & BL, we get following mask:
+
+mask = [ 0 | 0 | 1 | 0 | 0 | 0 | 0 | 0 ]
+Since the mask is non-zero, it means there are possible substring occurrences. As we see, there is only one non-zero element at index 2, thus only one substring comparison must be performed.
+
+Psuedocode:
+
+//From the site
+size_t avx2_strstr_anysize(const char* s, size_t n, const char* needle, size_t k) {
+
+    const __m256i first = _mm256_set1_epi8(needle[0]);
+    const __m256i last  = _mm256_set1_epi8(needle[k - 1]);
+
+    for (size_t i = 0; i < n; i += 32) {
+
+        const __m256i block_first = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(s + i));
+        const __m256i block_last  = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(s + i + k - 1));
+
+        const __m256i eq_first = _mm256_cmpeq_epi8(first, block_first);
+        const __m256i eq_last  = _mm256_cmpeq_epi8(last, block_last);
+
+        uint32_t mask = _mm256_movemask_epi8(_mm256_and_si256(eq_first, eq_last));
+
+        while (mask != 0) {
+
+            const auto bitpos = bits::get_first_bit_set(mask);
+
+            if (memcmp(s + i + bitpos, needle, k - 1) == 0) {
+                return i + bitpos;
+            }
+
+            mask = bits::clear_leftmost_set(mask);
+        }
+    }
+
+    return std::string::npos;
+}
+
+
+Easier to use for our implementation
+int substringFind(char *s, int n, char *substring, int k) {
+    int[] first_let = substring[0] * 16;
+    int[] second_let = substring[k-1] * 16
+
+    for (int i = 0; i < n; i += 16) {
+        first_block = s[i : i + 16]
+        second_block = s[i + k - 1 : i + k - 1 + 16]
+
+        eq_first = first_block - first_let + 1;
+        eq_second = second_block - second_let + 1
+
+        mask = eq_first * eq_second
+
+        mask = mask -1 1
+
+        for (int j = 0; j < 16; j++) {
+            if(mask[j] == 0) {
+                //Check substring
+                sub_check = s[i + j : i + j + k - 1];
+                diff = sub_check - substring
+                dot = diff dot 1
+                if(do == 0) {
+                    print(i +j)
+                    return;
+                }
+            }
+        }
+    }
+    return 0;
+}
+
+assembly Psuedocode:
+Store string to 0x8000... 0xa000 (use python to generate code to do this)
+Store substring to 0xb000 - 0xb00f max length 16
+Store first letter of subtring to 0xb100 - 0xb10f
+Store second letter of substring to 0xb200 - 0xb20f
+Store string len to r1
+Store substring len to r2
+Load vr0 to be 0xb100 - 0xb10f (the first letter)
+Load vr1 to be 0xb200 - 0xb20f (the second letter)
+move 0 to r3
+:loop1
+r4 = r3 + r2
+r4 = r4 - 1
+vr2 = 0x8000 + r3 : 0x8000 + r3 + 16
+vr3 = 0x8000 + r4 : 0x8000 + r4 + 16
+vr4 = vr2 - vr0
+vr5 = vr3 - vr1
+vr4 = vr4 + 1
+vr5 = vr5 + 1
+vr7 = vr4 vdot vr5
+vr7 = vr7 - 1
+store vr7 0xc000
+r5 = 0
+:inner loop start
+r6 = 0xc000 + r5
+r7 = load r6
+:begin if1
+jnz end if1
+vr8 =  0x8000 + r3 + r5 : 0x8000 + r3 + r5 + r2
+vr9 = 0xb000 : 0xb000 + r2
+vr10 = vr8 - vr9
+r10 = vr11 * 1
+jnz r10 end if1
+print(r3 + r5)
+jz r0 end
+:end if1
+r5 = r5 + 1
+r8 = r5 - 16
+jnz r8 inner loop start
+
+r3 = r3 + 16
+r9 = r1 - r3
+jns loop 1
+print '-'
+print '1'
+:end
+HALT
+
+
+
+
+
