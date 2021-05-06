@@ -687,10 +687,11 @@ module main();
     /*
         MEMORY
     */
-    wire wb_mem_bank_0_wen  = (wb_is_vst || (wb_is_st && ((wb_ra_val % 4) === 0)) );
-    wire wb_mem_bank_1_wen = (wb_is_vst || (wb_is_st && ((wb_ra_val % 4) === 1)) );
-    wire wb_mem_bank_2_wen = (wb_is_vst || (wb_is_st && ((wb_ra_val % 4) === 2)) );
-    wire wb_mem_bank_3_wen = (wb_is_vst || (wb_is_st && ((wb_ra_val % 4) === 3)) );
+    wire[15:1] test_wire = wb_ra_val[15:1];
+    wire wb_mem_bank_0_wen  = (wb_is_vst || (wb_is_st && ((wb_ra_val[15:1] % 4) === 0)) );
+    wire wb_mem_bank_1_wen = (wb_is_vst || (wb_is_st && ((wb_ra_val[15:1] % 4) === 1)) );
+    wire wb_mem_bank_2_wen = (wb_is_vst || (wb_is_st && ((wb_ra_val[15:1] % 4) === 2)) );
+    wire wb_mem_bank_3_wen = (wb_is_vst || (wb_is_st && ((wb_ra_val[15:1] % 4) === 3)) );
 
     wire[3:0] first_write = (wb_ra_val % 4);
 
