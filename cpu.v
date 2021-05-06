@@ -57,36 +57,38 @@ module main();
         - Bank X will hold addresses where address % 4 = X
     */
 
-    wire mem_bank_0_wen;
-    wire[15:0] mem_bank_0_raddr;
+    
+    wire[15:0] mem_bank_0_raddr = x_ra_val;
     wire[15:0] mem_bank_0_data;
+    wire mem_bank_0_wen = wb_mem_bank_0_wen;
     wire[15:0] mem_bank_0_waddr;
     wire[15:0] mem_bank_0_wdata;
     mem mem_bank0(clk,
         mem_bank_0_raddr[15:1], mem_bank_0_data,
         mem_bank_0_wen, mem_bank_0_waddr[15:1], mem_bank_0_wdata);
 
-    wire mem_bank_1_wen;
-    wire[15:0] mem_bank_1_raddr;
+    //TODO: raddr needsd to be changed
+    wire[15:0] mem_bank_1_raddr = x_ra_val;
     wire[15:0] mem_bank_1_data;
+    wire mem_bank_1_wen = wb_mem_bank_1_wen;
     wire[15:0] mem_bank_1_waddr;
     wire[15:0] mem_bank_1_wdata;
     mem mem_bank1(clk,
         mem_bank_1_raddr[15:1], mem_bank_1_data,
         mem_bank_1_wen, mem_bank_1_waddr[15:1], mem_bank_1_wdata);
 
-    wire mem_bank_2_wen;
-    wire[15:0] mem_bank_2_raddr;
+    wire[15:0] mem_bank_2_raddr = x_ra_val;
     wire[15:0] mem_bank_2_data;
+    wire mem_bank_2_wen = wb_mem_bank_1_wen;
     wire[15:0] mem_bank_2_waddr;
     wire[15:0] mem_bank_2_wdata;
     mem mem_bank2(clk,
         mem_bank_2_raddr[15:1], mem_bank_2_data,
         mem_bank_2_wen, mem_bank_2_waddr[15:1], mem_bank_2_wdata);
 
-    wire mem_bank_3_wen;
-    wire[15:0] mem_bank_3_raddr;
+    wire[15:0] mem_bank_3_raddr = x_ra_val;
     wire[15:0] mem_bank_3_data;
+    wire mem_bank_3_wen = wb_mem_bank_3_wen;
     wire[15:0] mem_bank_3_waddr;
     wire[15:0] mem_bank_3_wdata;
     mem mem_bank3(clk,
@@ -155,7 +157,7 @@ module main();
     wire d_is_js = d_is_jmp && d_subcode == 2;
     wire d_is_jns = d_is_jmp && d_subcode == 3;
 
-    wire d_is_scalar_mem = d_opcode == 4'b0100;
+    wire d_is_scalar_mem = d_opcode == 4'b0111;
     wire d_is_mem = (d_is_scalar_mem) || 
                 (d_opcode == 4'b1100) ||
                 (d_opcode == 4'b1101);
@@ -355,6 +357,7 @@ module main();
     reg[15:0] x_ins;
     reg x_valid = 0;
     reg[3:0] x_ra;
+    reg[15:0] x_ra_val;
     reg[3:0] x_stall_state;
 
     reg[15:0] x2_pc;
@@ -501,7 +504,7 @@ module main();
     wire wb_is_jnz = wb_is_jmp && wb_subcode == 1;
     wire wb_is_js = wb_is_jmp && wb_subcode == 2;
     wire wb_is_jns = wb_is_jmp && wb_subcode == 3;
-    wire wb_is_scalar_mem = wb_opcode == 4'b0100;
+    wire wb_is_scalar_mem = wb_opcode == 4'b0111;
     wire wb_is_mem = (wb_is_scalar_mem) || 
                 (wb_opcode == 4'b1100) ||
                 (wb_opcode == 4'b1101);
@@ -511,7 +514,7 @@ module main();
     wire wb_is_vsub = wb_opcode == 4'b1001;
     wire wb_is_vmul = wb_opcode == 4'b1010;
     wire wb_is_vdiv = wb_opcode == 4'b1011;
-    wire wb_is_vld = wb_opcode == 4'b1110;
+    wire wb_is_vld = wb_opcode == 4'b0111;
     wire wb_is_vst = wb_opcode == 4'b1101;
     wire wb_is_vdot = wb_opcode == 4'b1110;
     wire wb_is_halt = wb_opcode == 4'b1111;
@@ -526,9 +529,9 @@ module main();
     /*
         DECISION MAKING
     */
-    // assign flush = wb_valid ? wb_take_jump : 0;
-    wire [15:0] wb_next_pc = wb_is_jmp ? wb_scalar_output : wb_pc + 2;
-    assign flush = wb_valid ? wb_next_pc !== c_pc : 0;
+    assign flush = wb_valid ? wb_take_jump : 0;
+    wire [15:0] wb_next_pc = wb_take_jump ? wb_scalar_output : wb_pc + 2;
+    //assign flush = wb_valid ? wb_next_pc !== c_pc : 0;
     // wire wb_take_jump =  (wb_is_jz) ? (wb_ra_val === 0 ? 1 :0):
     //                     (wb_is_jnz) ? (wb_ra_val !== 0 ? 1 : 0):
     //                     (wb_is_js) ? (wb_ra_val[15] === 1 ? 1 : 0):
@@ -543,6 +546,11 @@ module main();
     assign reg_wdata = wb_scalar_output;
     assign reg_waddr = wb_rt;
     wire wb_is_print = wb_writes_reg && (wb_rt === 0);
+
+    wire wb_take_jump =  (wb_is_jz) ? (wb_ra == 0 ? 1 :0):
+                        (wb_is_jnz) ? (wb_ra != 0 ? 1 : 0):
+                        (wb_is_js) ? (wb_ra[15] ? 1 : 0):
+                        (wb_is_jns) ? (!wb_ra[15] ? 1 : 0) : 0;
 
     /*
         WRITING TO VREG
@@ -566,10 +574,10 @@ module main();
     /*
         MEMORY
     */
-    wire wb_mem_bank_wen_0  = (wb_is_vst || (wb_is_st && ((wb_ra_val % 4) === 0)) );
-    wire wb_mem_bank_wen_1 = (wb_is_vst || (wb_is_st && ((wb_ra_val % 4) === 1)) );
-    wire wb_mem_bank_wen_2 = (wb_is_vst || (wb_is_st && ((wb_ra_val % 4) === 2)) );
-    wire wb_mem_bank_wen_3 = (wb_is_vst || (wb_is_st && ((wb_ra_val % 4) === 3)) );
+    wire wb_mem_bank_0_wen  = (wb_is_vst || (wb_is_st && ((wb_ra_val % 4) === 0)) );
+    wire wb_mem_bank_1_wen = (wb_is_vst || (wb_is_st && ((wb_ra_val % 4) === 1)) );
+    wire wb_mem_bank_2_wen = (wb_is_vst || (wb_is_st && ((wb_ra_val % 4) === 2)) );
+    wire wb_mem_bank_3_wen = (wb_is_vst || (wb_is_st && ((wb_ra_val % 4) === 3)) );
 
     wire[3:0] first_write = (wb_ra_val % 4);
 

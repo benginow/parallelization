@@ -1,14 +1,15 @@
 movl r1,1
 movl r2,4
-movl r3,16 
-movl r4,12
-movl r5,26
-movl r6,32
-jz r3,r2
-sub r0,r2,r0
+movl r3,18 
+movl r4,14
+movl r5,28
+movl r6,34
+movl r8,48
+jz r3,r2 #14
+add r0,r2,r8
 sub r2,r2,r1
 jnz r4,r2
-movl r7,0
+movl r7,0 #22
 jns r5,r7
 movl r0,69
 sub r7,r7,r1

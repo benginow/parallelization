@@ -117,4 +117,4 @@ def main (file_name):
         encoded = encoded.replace("0x","")
         f.write(encoded + "\n")
 
-main ("testall")
+main ("testing/t08")

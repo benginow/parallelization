@@ -1,6 +1,6 @@
 V_FILES=${wildcard *.v}
-T_FILES=${wildcard testing/*.hex}
-OK_FILES=${wildcard testing/*.ok}
+T_FILES=${wildcard *.hex}
+OK_FILES=${wildcard *.ok}
 TEST_NAMES=${sort ${subst .ok,,${OK_FILES}}}
 TEST_RAWS=${addsuffix .raw,${TEST_NAMES}}
 TEST_OUTS=${addsuffix .out,${TEST_NAMES}}
