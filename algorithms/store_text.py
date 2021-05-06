@@ -8,8 +8,8 @@ def store_text(filename, string, substring):
         num = ord(ch)
         f.write("movl r1," + str(num) + "\n")
         dest = hex(32768 + i)
-        f.write("movl r2," + dest[4:6] + "\n")
-        f.write("movh r2," + dest[2:4] + "\n")
+        f.write("movl r2," + str(int(dest[4:6],16)) + "\n")
+        f.write("movh r2," + str(int(dest[2:4],16)) + "\n")
         f.write("st r2,r1" + "\n")
         i += 1
 
@@ -18,30 +18,30 @@ def store_text(filename, string, substring):
         num = ord(ch)
         f.write("movl r1," + str(num) + "\n")
         dest = hex(45056+ i)
-        f.write("movl r2," + dest[4:6] + "\n")
-        f.write("movh r2," + dest[2:4] + "\n")
+        f.write("movl r2," + str(int(dest[4:6],16)) + "\n")
+        f.write("movh r2," + str(int(dest[2:4],16)) + "\n")
         f.write("st r2,r1" + "\n")
         i += 1
 
     for i in range(16):
         dest = hex(57344 + i)
         f.write("movl r1," + "1" + "\n")
-        f.write("movl r2," + dest[4:6] + "\n")
-        f.write("movh r2," + dest[2:4] + "\n")
+        f.write("movl r2," + str(int(dest[4:6],16)) + "\n")
+        f.write("movh r2," + str(int(dest[2:4],16)) + "\n")
         f.write("st r2,r1" + "\n")
 
     for i in range(16):
         dest = hex(45312 + i)
         f.write("movl r1," + str(ord(substring[0])) + "\n")
-        f.write("movl r2," + dest[4:6] + "\n")
-        f.write("movh r2," + dest[2:4] + "\n")
+        f.write("movl r2," + str(int(dest[4:6],16)) + "\n")
+        f.write("movh r2," + str(int(dest[2:4],16)) + "\n")
         f.write("st r2,r1" + "\n")
 
     for i in range(16):
         dest = hex(45568 + i)
         f.write("movl r1," +  str(ord(substring[-1])) + "\n")
-        f.write("movl r2," + dest[4:6] + "\n")
-        f.write("movh r2," + dest[2:4] + "\n")
+        f.write("movl r2," + str(int(dest[4:6],16)) + "\n")
+        f.write("movh r2," + str(int(dest[2:4],16)) + "\n")
         f.write("st r2,r1" + "\n")
     
         
