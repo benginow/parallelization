@@ -34,3 +34,4 @@ e016 //vdot r6, vr0, vr1
 6010 //no-op
 6010 //no-op
 0670 //vadd r0, r6, r7 (should print 'A')
+ffff
