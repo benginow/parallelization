@@ -1,0 +1,36 @@
+// loops storing 1 to 4 continuous mem addresses, then vld from it at length 4, then vdot it and test correctness
+//no-op = jnz r0, r0
+
+@0
+4011 //movl r1, $1 (val stored)
+4002 //movl r2, $0 (address)
+4023 //movl r3, $2 (increment for addresses)
+4044 //movl r4, $4 (loop counter)
+4015 //movl r5, $1 (decrement for loop counter)
+4108// movl r8, $16 (destination for jump)
+6010 //no-op
+6010 //no-op
+
+7211 //st r1, r2
+0232 //add r2, r2, r3
+1454 //sub r4, r4, r5
+6010 //no-op
+6010 //no-op
+6010 //no-op
+6010 //no-op
+6418 //jnz r8, r4
+
+c003 //vld vr0, r0, 4 (3 is NOT a typo check ISA)
+c103 //vld vr1, r0, 4
+6010 //no-op
+6010 //no-op
+6010 //no-op
+6010 //no-op
+
+e016 //vdot r6, vr0, vr1
+43d7 //movl r7, $64
+6010 //no-op
+6010 //no-op
+6010 //no-op
+6010 //no-op
+0670 //vadd r0, r6, r7 (should print 'A')

@@ -48,5 +48,10 @@ ${TEST_TESTS} : %.test : Makefile %.result
 test : ${TEST_TESTS};
 
 clean:
+	-find ./ \( -iname \cpu -o -iname \*.out -o -iname \*.diff -o -iname \*.raw -o -iname \*.result -o -iname \*.time -o -iname \*.cycles -o -iname \*.vcd \) -delete
+
+cleanish:
+	-find ./ \( -iname \cpu -o -iname \*.out -o -iname \*.diff -o -iname \*.raw -o -iname \*.result -o -iname \*.time -o -iname \*.cycles \) -delete
+
+oldclean:
 	-rm -rf cpu *.out *.diff *.raw *.result *.time *.cycles *.vcd
-	-rm -rf testing/*.out testing/*.diff testing/*.raw testing/*.result testing/*.time testing/*.cycles testing/*.vcd

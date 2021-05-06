@@ -1,3 +1,4 @@
+cpu
 *.out
 *.diff
 *.raw
@@ -5,10 +6,3 @@
 *.time
 *.cycles
 *.vcd
-./testing/*.out
-./testing/*.diff
-./testing/*.raw
-./testing/*.result
-./testing/*.time
-./testing/*.cycles
-./testing/*.vcd
