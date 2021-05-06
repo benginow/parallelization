@@ -102,8 +102,9 @@ Store first letter of subtring to 0xb100 - 0xb10f
 Store second letter of substring to 0xb200 - 0xb20f
 Store string len to r1
 Store substring len to r2
+# need python for this
 Load vr0 to be 0xb100 - 0xb10f (the first letter)
-Load vr1 to be 0xb200 - 0xb20f (the second letter)
+Load vr1 to be 0xb200 - 0xb20f (the last letter)
 move 0 to r3
 :loop1
 r4 = r3 + r2
@@ -119,14 +120,13 @@ vr7 = vr7 - 1
 store vr7 0xc000
 r5 = 0
 :inner loop start
-r6 = 0xc000 + r5
-r7 = load r6
-:begin if1
-jnz end if1
+r8 = 0xc000 + r5
+r7 = load r8
+jnz r7 end if1
 vr8 =  0x8000 + r3 + r5 : 0x8000 + r3 + r5 + r2
 vr9 = 0xb000 : 0xb000 + r2
 vr10 = vr8 - vr9
-r10 = vr11 * 1
+r10 = vr10 * 1
 jnz r10 end if1
 print(r3 + r5)
 jz r0 end
@@ -134,12 +134,80 @@ jz r0 end
 r5 = r5 + 1
 r8 = r5 - 16
 jnz r8 inner loop start
-
 r3 = r3 + 16
 r9 = r1 - r3
 jns loop 1
 print '-'
 print '1'
+:end
+HALT
+
+# we are looking for "world" in "Hello world"
+# this was made using store text.py
+
+
+//Code minus python stuff
+movl r6,0
+movh r6,177
+vld vr0,r6,15
+movh r6,178
+vld vr1,r6,15
+movh r6,224
+vld vr14,r6,15
+movl r3,0
+movl r11,255
+movh r11,0
+movl r12,255
+movh r12,0
+movl r13,255
+movh r13,0
+movl r14,255
+movh r14,0
+:loop1 # this address is important r11
+add r4,r3,r2
+movl r7,1
+sub r4,r4,r7
+movh r6,128
+add r7,r6,r3
+vld vr2,r7,15
+add r7,r6,r4
+vld vr3,r7,15
+vsub vr4,vr2,vr0
+vsub vr5,vr3,vr1
+vadd vr4,vr4,vr14
+vadd vr5,vr5,vr14
+vdot vr7,vr4,vr5
+vsub vr7,vr7,vr14
+movh r6,192
+vst vr7,r6,15
+movl r5,0
+:loop2know this address should be r12
+add r8,r6,r5
+ld r7,r8
+jnz r13,r7
+movh r6,128
+add r15,r6,r3
+add r15,r15,r5
+vld vr8,r15,4 #change this to be length of word - 1
+movh r6,176
+vld vr9,r6,4 #also needs to be length of word
+vsub vr10,vr8,vr9
+vdot r10,vr10,vr14
+jnz r13,r10
+add r0,r3,r5
+jz r14,r0
+:end if should be r13
+movl r15,1
+add r5,r5,r15
+movl r15,16
+sub r8,r5,r15
+jnz r12,r8
+movl r15,16
+add r3,r3,r15
+sub r9,r1,r3
+jns r11,r9
+movl r0,45
+movl r0,49
 :end
 HALT
 
