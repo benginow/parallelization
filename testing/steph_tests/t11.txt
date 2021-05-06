@@ -55,3 +55,4 @@ movl r10,0
 movl r10,0
 movl r10,0
 sub r0,r9,r0
+HALT
