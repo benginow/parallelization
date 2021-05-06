@@ -92,6 +92,7 @@ module alu(input clk, input[15:0]fr_pc, input[15:0]fr_ins,
     wire[3:0] x2_opcode = x2_ins[15:12];
     reg[15:0] x2_prev_result;
     //reg x2_take_jump;
+    
     wire x2_is_ld = x2_opcode === 4'b0111 && x2_ins[7:4] === 4'b0000;
     
     //if it's a ld, we want to output the mem addr, in case we need

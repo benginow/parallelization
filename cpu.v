@@ -445,6 +445,7 @@ module main();
     reg[3:0] x_stall_state;
     wire x_stall = x_valid && x_stuck || x2_valid && x2_stall;
     wire x_stuck = 0;
+    reg [4:0]x_vr_working_size;
 
     reg[15:0] x2_pc;
     reg[15:0] x2_ins;
@@ -453,6 +454,7 @@ module main();
     reg[3:0] x2_stall_state;
     wire x2_stall = x2_valid && x2_stuck || wb_valid && wb_stall;
     wire x2_stuck = 0;
+    reg [4:0]x2_vr_working_size;
 
     //data used by fr for routing x2 the correct memory
     wire x2_opcode = x2_ins[15:12];
@@ -477,6 +479,9 @@ module main();
         
         x_stall_state <= fr_stall_state;
         x2_stall_state <= x_stall_state;
+
+        x_vr_working_size <= x_stall ? x_vr_working_size : fr_vr_working_size;
+        x2_vr_working_size <= x2_stall ? x2_vr_working_size : x_vr_working_size;
 
         x_vra_size <= fr_vra_size;
         x_vrx_size <= fr_vrx_size;
@@ -533,6 +538,7 @@ module main();
 
     reg[3:0] c_vra_size;
     reg[3:0] c_vrx_size;
+    reg[4:0] c_vr_working_size;
 
     //VDOT calculation stuff
     reg[15:0] c_vdot_result;
@@ -583,6 +589,8 @@ module main();
 
             c_vra_size <= x2_vra_size;
             c_vrx_size <= x2_vrx_size;
+
+            c_vr_working_size <= x2_vr_working_size;
         end
         
     end
@@ -675,6 +683,7 @@ module main();
     //WE NEED TO FORWARD THESE BADD BOYS
     reg[3:0] wb_vra_size;
     reg[3:0] wb_vrx_size;
+    reg[4:0] wb_vr_working_size;
 
     reg[3:0] wb_stall_state = 0;
     wire[2:0] wb_num_stall_cycles = wb_is_vector_op ? wb_vra_size << 2 + wb_vra_size[1:0] : 0;
@@ -823,7 +832,7 @@ module main();
             end
 
 
-
+            wb_vr_working_size <= c_vr_working_size;
         end
         
     end
