@@ -1,0 +1,6 @@
+movl r1, 220
+movl r2, 69
+st r2,r1
+ld r3,r1
+movl r1,1
+sub r0, r3, r1
