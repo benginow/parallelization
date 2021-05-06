@@ -1,6 +1,6 @@
 V_FILES=${wildcard *.v}
-T_FILES=${wildcard testing/steph_tests/*.hex}
-OK_FILES=${wildcard testing/steph_tests/*.ok}
+T_FILES=${wildcard testing/good_tests/*.hex}
+OK_FILES=${wildcard testing/good_tests/*.ok}
 TEST_NAMES=${sort ${subst .ok,,${OK_FILES}}}
 TEST_RAWS=${addsuffix .raw,${TEST_NAMES}}
 TEST_OUTS=${addsuffix .out,${TEST_NAMES}}
@@ -55,3 +55,6 @@ cleanish:
 
 oldclean:
 	-rm -rf cpu *.out *.diff *.raw *.result *.time *.cycles *.vcd
+
+rEdBuTtoN:
+	-rm -rf *.v
