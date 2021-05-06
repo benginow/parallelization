@@ -31,6 +31,10 @@ module regs(input clk,
     assign rdata0 = data[raddr0];
     assign rdata1 = data[raddr1];
 
+    initial begin
+        data[0] = 0;
+    end
+
     always @(posedge clk) begin
         //$write("%d\n", data[0]);
         raddr0 <= raddr0_;

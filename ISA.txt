@@ -3,7 +3,7 @@ Special Info:
         * reading from r0 always returns 0
         * writing to r0 interprets the the least significant
             8 bits as an ASCII code and prints that character
-    - rF is special:
+    - r15 is special:
         * written to by mul and div, can change without explicit reference
 
 encoding          instruction       description
@@ -29,8 +29,8 @@ encoding          instruction       description
 1010aaaabbbbtttt  vmul vrt,vra,vrb  vregs[t] = vregs[a] * vregs[b]
 1011aaaabbbbtttt  vdiv vrt,vra,vrb  vregs[t] = vregs[a] / vregs[b]
 
-1100aaaaiiiitttt  vld vrt,ra,$imm+1  vregs[t] = mem[regs[a]] : mem[regs[a] + $imm]
-1101aaaaiiiitttt  vst vrt,ra,$imm+1  mem[regs[a]] : mem[regs[a] + $imm] = vregs[t]
+1100aaaaiiiitttt  vld vrt,ra,$imm+1  vregs[t] = mem[regs[a]] : mem[regs[a] + $imm * 2 + 1]
+1101aaaaiiiitttt  vst vrt,ra,$imm+1  mem[regs[a]] : mem[regs[a] + $imm * 2 + 1] = vregs[t]
 
 1110aaaabbbbtttt  vdot rt,vra,vrb   regs[t] = vregs[a] DOTPRODUCT vregs[b]
 

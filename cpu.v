@@ -58,7 +58,7 @@ module main();
     */
 
     
-    wire[15:0] mem_bank_0_raddr = fr_ra_val;
+    wire[15:0] mem_bank_0_raddr = fr_mem_0_request;
     wire[15:0] mem_bank_0_data;
     wire mem_bank_0_wen = wb_mem_bank_0_wen;
     wire[15:0] mem_bank_0_waddr;
@@ -68,7 +68,7 @@ module main();
         mem_bank_0_wen, mem_bank_0_waddr[15:1], mem_bank_0_wdata);
 
     //TODO: raddr needsd to be changed
-    wire[15:0] mem_bank_1_raddr = fr_ra_val;
+    wire[15:0] mem_bank_1_raddr = fr_mem_1_request;
     wire[15:0] mem_bank_1_data;
     wire mem_bank_1_wen = wb_mem_bank_1_wen;
     wire[15:0] mem_bank_1_waddr;
@@ -77,7 +77,7 @@ module main();
         mem_bank_1_raddr[15:1], mem_bank_1_data,
         mem_bank_1_wen, mem_bank_1_waddr[15:1], mem_bank_1_wdata);
 
-    wire[15:0] mem_bank_2_raddr = fr_ra_val;
+    wire[15:0] mem_bank_2_raddr = fr_mem_2_request;
     wire[15:0] mem_bank_2_data;
     wire mem_bank_2_wen = wb_mem_bank_1_wen;
     wire[15:0] mem_bank_2_waddr;
@@ -86,7 +86,7 @@ module main();
         mem_bank_2_raddr[15:1], mem_bank_2_data,
         mem_bank_2_wen, mem_bank_2_waddr[15:1], mem_bank_2_wdata);
 
-    wire[15:0] mem_bank_3_raddr = fr_ra_val;
+    wire[15:0] mem_bank_3_raddr = fr_mem_3_request;
     wire[15:0] mem_bank_3_data;
     wire mem_bank_3_wen = wb_mem_bank_3_wen;
     wire[15:0] mem_bank_3_waddr;
@@ -288,6 +288,13 @@ module main();
     wire[255:0] fr_vra_val = vreg_data0;
     wire[255:0] fr_vrx_val = vreg_data1;
 
+    //FR has to deal with memory requests to the banked memory using the instruction and stall cycle
+    wire [15:0] fr_mem_0_request = !fr_is_vector_op ? fr_ra_val : fr_ra_val + 8 * fr_stall_state;
+    wire [15:0] fr_mem_1_request = !fr_is_vector_op ? fr_ra_val : fr_mem_0_request + 2;
+    wire [15:0] fr_mem_2_request = !fr_is_vector_op ? fr_ra_val : fr_mem_0_request + 4;
+    wire [15:0] fr_mem_3_request = !fr_is_vector_op ? fr_ra_val : fr_mem_0_request + 8;
+
+
     always @(posedge clk) begin
         fr_valid <= flush ? 0 : fr_stall ? fr_valid : d_valid && !d_stuck;
 
@@ -306,6 +313,7 @@ module main();
     end
 
     //we need to split up our items from the vregs when pipelining
+    //TODO we need to add fr_ in front of all of these but im thinking abt something else rn
     wire [15:0]vra_entry0 = fr_vra_val[255:240];
     wire [15:0]vra_entry1 = fr_vra_val[239:224];
     wire [15:0]vra_entry2 = fr_vra_val[223:208];
@@ -353,8 +361,16 @@ module main();
 
     //this is the ra val we want to percolate for scalars
     //TODO: MAKE SURE ALL IS WELL HERE
-    //wire[15:0] 
-    wire[15:0] x2_mem_0 = mem_bank_0_data;
+    
+    //pipe 0 has to given the correct bank to read from for scalar operations
+    //this requires knowing what the request was 2 cycles ago - data now in x2_ra_val
+    wire[14:0] x2_scalar_read_addr = x2_ra_val[15:1]; //note word address as viewed by memory
+    wire[15:0] x2_scalar_mem = x2_scalar_read_addr[1:0] == 0 ? mem_bank_0_data :
+                            x2_scalar_read_addr[1:0] == 1 ? mem_bank_1_data :
+                            x2_scalar_read_addr[1:0] == 2 ? mem_bank_2_data : 
+                            x2_scalar_read_addr[1:0] == 3 ? mem_bank_3_data : 0;
+
+    wire[15:0] x2_mem_0 = x2_is_vld ? mem_bank_0_data : x2_scalar_mem;
     wire[15:0] x2_pipe_0_result;
     //we haven't quite dealt with this yet
     wire[15:0] x2_overflow_0;
@@ -437,6 +453,10 @@ module main();
     reg[3:0] x2_stall_state;
     wire x2_stall = x2_valid && x2_stuck || wb_valid && wb_stall;
     wire x2_stuck = 0;
+
+    //data used by fr for routing x2 the correct memory
+    wire x2_opcode = x2_ins[15:12];
+    wire x2_is_vld = x2_opcode == 4'b1100;
 
     reg[3:0] x_vra_size;
     reg[3:0] x_vrx_size;
