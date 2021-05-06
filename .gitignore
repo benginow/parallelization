@@ -12,10 +12,3 @@
 ./testing/*.time
 ./testing/*.cycles
 ./testing/*.vcd
-*/*.out
-*/*.diff
-*/*.raw
-*/*.result
-*/*.time
-*/*.cycles
-*/*.vcd
