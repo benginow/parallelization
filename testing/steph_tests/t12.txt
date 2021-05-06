@@ -15,3 +15,4 @@ vld vr2,r7,16
 vdot r9,vr1,vr2
 movl r10,1431
 sub r0,r9,r10
+HALT

@@ -18,3 +18,4 @@ vld vr2,r8,10
 vdot r10,vr2,vr1
 movl r11,870
 sub r0,r10,r11
+HALT

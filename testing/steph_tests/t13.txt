@@ -19,3 +19,4 @@ vdiv vr4,vr3,vr1
 vdot r9,vr4,vr2
 movl r10,1431
 sub r0,r9,r10
+HALT

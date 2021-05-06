@@ -20,3 +20,4 @@ movl r3,0
 movl r3,0
 movl r3,0
 ld r0,r1
+HALT

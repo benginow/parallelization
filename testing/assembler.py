@@ -116,8 +116,9 @@ def main (file_name):
         encoded = "0x{:04x}".format(int(line,2))
         encoded = encoded.replace("0x","")
         f.write(encoded + "\n")
+    # f.write("FFFF\n")
 
-main ("steph_tests/t18")
+main ("steph_tests/t22")
 
 # Changes:
 # T12
