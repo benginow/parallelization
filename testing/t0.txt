@@ -1,2 +1,0 @@
-movl r0,48
-HALT
