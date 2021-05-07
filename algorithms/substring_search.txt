@@ -29,6 +29,47 @@ After merging comparison results, i.e. AF & BL, we get following mask:
 mask = [ 0 | 0 | 1 | 0 | 0 | 0 | 0 | 0 ]
 Since the mask is non-zero, it means there are possible substring occurrences. As we see, there is only one non-zero element at index 2, thus only one substring comparison must be performed.
 
+
+
+This algorithm works by trying to first match the first and last letter of the string we are searching for in the big string.
+
+SIMD helps us since it can check for matches 16 letters at a time
+
+Ex: Finding World in Hello World
+
+//First letter of word we are looking for
+F = [W, W, W, W, W, W, W, W, W, W, W, W, W, W, W, W]
+//Last letter of word we are looking for
+L = [d, d, d, d, d, d, d, d, d, d, d, d, d, d, d, d]
+
+//Current i : i + 16 characters of string
+A = [H, e, l, l, o,  , W, o, r, l, d,  ,  ,  ,  ,  ]
+//Next i + k - 1 : i + 16 + k - 1 characters of string
+B = [o,  , W, o, r, l, d,  ,  ,  ,  ,  ,  ,  ,  ,  ]
+
+// compare F = B1 for 16 letters
+AF = [0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+// compare L = B2 for 16 letters
+BL = [0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+// M = AF & BL
+M = [0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+//A 1 bit means that we need to check for at that bit location
+//We can check substring equality using vector ops easily
+
+//Load s[i + j : i + j + k - 1]
+C = [W, o, r, l, d]
+
+//The substring
+S = [W, o, r, l, d]
+
+//Subtract S from C using vsub
+D = C - S = [0, 0, 0, 0, 0]
+
+//Since D is all zeros we found our match
+
+
 Psuedocode:
 
 //From the site
@@ -64,6 +105,7 @@ size_t avx2_strstr_anysize(const char* s, size_t n, const char* needle, size_t k
 
 
 Easier to use for our implementation
+
 int substringFind(char *s, int n, char *substring, int k) {
     int[] first_let = substring[0] * 16;
     int[] second_let = substring[k-1] * 16
@@ -71,17 +113,12 @@ int substringFind(char *s, int n, char *substring, int k) {
     for (int i = 0; i < n; i += 16) {
         first_block = s[i : i + 16]
         second_block = s[i + k - 1 : i + k - 1 + 16]
-
         eq_first = first_block - first_let + 1;
         eq_second = second_block - second_let + 1
-
         mask = eq_first * eq_second
-
-        mask = mask -1 1
-
+        mask = mask -1 
         for (int j = 0; j < 16; j++) {
             if(mask[j] == 0) {
-                //Check substring
                 sub_check = s[i + j : i + j + k - 1];
                 diff = sub_check - substring
                 dot = diff dot 1
