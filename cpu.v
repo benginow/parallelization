@@ -46,6 +46,7 @@ module main();
 
     
     //instr mem - 2 clock latency
+    // read address assignment occurs in f2 stage
     wire [15:0]instr_mem_raddr;
     wire [15:0]instr_mem_data;
     instr_mem instr_bank(clk,
@@ -54,10 +55,11 @@ module main();
     /* Data Memory
         - Split into 4 banks instead of 1 contiguous module
         - Bank X will hold addresses where address % 4 = X
+        - Read address assignments occur in fr stage
     */
 
     
-    wire[15:0] mem_bank_0_raddr = fr_mem_0_request;
+    wire[15:0] mem_bank_0_raddr;
     wire[15:0] mem_bank_0_data;
     //wire mem_bank_0_wen = wb_mem_bank_0_wen;
     wire[15:0] mem_bank_0_waddr;
@@ -67,7 +69,7 @@ module main();
         mem_bank_0_wen, mem_bank_0_waddr[15:1], mem_bank_0_wdata);
 
     //TODO: raddr needsd to be changed
-    wire[15:0] mem_bank_1_raddr = fr_mem_1_request;
+    wire[15:0] mem_bank_1_raddr;
     wire[15:0] mem_bank_1_data;
     //wire mem_bank_1_wen = wb_mem_bank_1_wen;
     wire[15:0] mem_bank_1_waddr;
@@ -76,7 +78,7 @@ module main();
         mem_bank_1_raddr[15:1], mem_bank_1_data,
         mem_bank_1_wen, mem_bank_1_waddr[15:1], mem_bank_1_wdata);
 
-    wire[15:0] mem_bank_2_raddr = fr_mem_2_request;
+    wire[15:0] mem_bank_2_raddr;
     wire[15:0] mem_bank_2_data;
     //wire mem_bank_2_wen = wb_mem_bank_1_wen;
     wire[15:0] mem_bank_2_waddr;
@@ -85,7 +87,7 @@ module main();
         mem_bank_2_raddr[15:1], mem_bank_2_data,
         mem_bank_2_wen, mem_bank_2_waddr[15:1], mem_bank_2_wdata);
 
-    wire[15:0] mem_bank_3_raddr = fr_mem_3_request;
+    wire[15:0] mem_bank_3_raddr;
     wire[15:0] mem_bank_3_data;
     //wire mem_bank_3_wen = wb_mem_bank_3_wen;
     wire[15:0] mem_bank_3_waddr;
@@ -296,6 +298,10 @@ module main();
     wire [15:0] fr_mem_2_request = !fr_is_vector_op ? fr_ra_val : fr_mem_0_request + 4;
     wire [15:0] fr_mem_3_request = !fr_is_vector_op ? fr_ra_val : fr_mem_0_request + 6;
 
+    assign mem_bank_0_raddr = fr_mem_0_request;
+    assign mem_bank_1_raddr = fr_mem_1_request;
+    assign mem_bank_2_raddr = fr_mem_2_request;
+    assign mem_bank_3_raddr = fr_mem_3_request;
 
     always @(posedge clk) begin
         fr_valid <= flush ? 0 : fr_stall ? fr_valid : d_valid && !d_stuck;
