@@ -267,9 +267,9 @@ module main();
     
     wire fr_stall = fr_valid && fr_stuck || (wb_valid && wb_stall);
     reg[3:0] fr_stall_state = 0;
-    //Num stall cycles needed is working size / 4 + 1 if there is remainder
+    //Num stall cycles needed is working (size-4) / 4 + 1 if there is remainder
     wire[2:0] fr_num_stall_cycles = !fr_is_vector_op ? 0 :  
-                        (fr_vr_working_size << 2) + (fr_vr_working_size[1] || fr_vr_working_size[0]);
+                        ( (fr_vr_working_size - 5'h4) >> 2) + (fr_vr_working_size[1] || fr_vr_working_size[0]);
     wire fr_stuck = fr_stall_state != 1 && fr_num_stall_cycles != 0;
 
     wire[3:0] fr_ra = fr_ins[11:8]; //always needed
@@ -720,10 +720,10 @@ module main();
     reg[4:0] wb_vr_working_size;
 
     reg[3:0] wb_stall_state = 0;
-    wire[2:0] wb_num_stall_cycles = !wb_is_vector_op ? 0 : 
+    wire[2:0] wb_num_stall_cycles = !wb_is_vst ? 0 : 
             (wb_vr_working_size << 2) + (wb_vr_working_size[1] || wb_vr_working_size[0]);
     wire wb_stall = wb_valid && wb_stuck;
-    wire wb_stuck = wb_stall_state !=1 && wb_num_stall_cycles != 0;
+    wire wb_stuck = wb_stall_state != 1 && wb_num_stall_cycles != 0;
 
     // reg[3:0] wb_stall_cycle <= wb_is_vst ? wb_
     // wire wb_stall = wb_is_vst;
@@ -824,20 +824,19 @@ module main();
     wire[7:0] print_out = wb_scalar_output[7:0];
 
     always @(posedge clk) begin
-
         wb_valid <= flush ? 0 : wb_stall ? wb_valid : c_valid && !c_stuck;
-        wb_pc <= c_pc;
-        wb_ins <= c_ins;
-        wb_scalar_output <= c_scalar_output;
-
-        wb_vra_size <= c_vra_size;
-        wb_vrx_size <= c_vrx_size;
-
-        wb_ra_val <= c_ra_val;
-        wb_rx_val <= c_rx_val;
-
 
         if (!wb_stall) begin
+            wb_pc <= c_pc;
+            wb_ins <= c_ins;
+            wb_scalar_output <= c_scalar_output;
+
+            wb_vra_size <= c_vra_size;
+            wb_vrx_size <= c_vrx_size;
+
+            wb_ra_val <= c_ra_val;
+            wb_rx_val <= c_rx_val;
+
             wb_vec_reg <= {c_temp_vector_0, c_temp_vector_1, c_temp_vector_2, 
                             c_temp_vector_3, c_temp_vector_4, c_temp_vector_5, 
                             c_temp_vector_6, c_temp_vector_7, c_temp_vector_8, 
@@ -863,7 +862,7 @@ module main();
             end
 
             if(!(flush && wb_valid)) begin
-                f1_pc <= f1_pc+2;
+                f1_pc <= f1_stall ? f1_pc : f1_pc+2;
             end
 
 
