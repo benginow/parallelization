@@ -25,4 +25,13 @@ module mem(input clk,
     wire [15:0]data04 = data[2];
     wire [15:0]data06 = data[3];
 
+    wire [15:0]data32 = data[16'd16];
+    wire [15:0]data34 = data[16'd17];
+    wire [15:0]data36 = data[16'd18];
+    wire [15:0]data38 = data[16'd19];
+    wire [15:0]data40 = data[16'd20];
+    wire [15:0]data42 = data[16'd21];
+    wire [15:0]data44 = data[16'd22];
+    wire [15:0]data46 = data[16'd23];
+
 endmodule

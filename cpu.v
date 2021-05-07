@@ -522,6 +522,7 @@ module main();
     wire c_stuck = 0;
 
     wire c_is_vdot = c_opcode == 4'b1110;
+    wire c_is_vst = c_opcode == 4'b1101;
 
     reg[15:0] c_pipe_0_result; //non-vdot outputs for scalar registers
     wire[15:0] c_scalar_output = c_is_vdot ? c_vdot_result : c_pipe_0_result;
@@ -544,6 +545,7 @@ module main();
     reg[15:0] c_temp_vector_15;
     reg[15:0] c_temp_vector_16;
 
+    reg[255:0] c_vrx_val; //needed for vst
     reg[3:0] c_vra_size;
     reg[3:0] c_vrx_size;
     reg[4:0] c_vr_working_size;
@@ -628,6 +630,7 @@ module main();
 
             c_pipe_0_result <= x2_pipe_0_result;
 
+            c_vrx_val <= fr_vrx_val;
             c_vra_size <= x2_vra_size;
             c_vrx_size <= x2_vrx_size;
 
@@ -727,9 +730,9 @@ module main();
     reg[3:0] wb_vrx_size;
     reg[4:0] wb_vr_working_size;
 
-    reg[3:0] wb_stall_state = 0;
+    reg[2:0] wb_stall_state = 0;
     wire[2:0] wb_num_stall_cycles = !wb_is_vst ? 0 : 
-            (wb_vr_working_size << 2) + (wb_vr_working_size[1] || wb_vr_working_size[0]);
+            (wb_vr_working_size >> 2) + (wb_vr_working_size[1] || wb_vr_working_size[0]);
     wire wb_stall = wb_valid && wb_stuck;
     wire wb_stuck = wb_stall_state != 1 && wb_num_stall_cycles != 0;
 
@@ -739,79 +742,79 @@ module main();
     /*
         MEMORY
     */
-    wire[15:1] test_wire = wb_ra_val[15:1] % 4;
-    wire wb_mem_bank_0_wen  = (wb_is_vst || (wb_is_st && ((wb_ra_val[15:1] % 4) === 0)) );
-    wire wb_mem_bank_1_wen = (wb_is_vst || (wb_is_st && ((wb_ra_val[15:1] % 4) === 1)) );
-    wire wb_mem_bank_2_wen = (wb_is_vst || (wb_is_st && ((wb_ra_val[15:1] % 4) === 2)) );
-    wire wb_mem_bank_3_wen = (wb_is_vst || (wb_is_st && ((wb_ra_val[15:1] % 4) === 3)) );
+    wire [15:1]test_wire = wb_ra_val[15:1] % 4;
+    wire [15:0]wb_mem_bank_0_wen  = (wb_is_vst || (wb_is_st && ((wb_ra_val[15:1] % 4) === 0)) );
+    wire [15:0]wb_mem_bank_1_wen = (wb_is_vst || (wb_is_st && ((wb_ra_val[15:1] % 4) === 1)) );
+    wire [15:0]wb_mem_bank_2_wen = (wb_is_vst || (wb_is_st && ((wb_ra_val[15:1] % 4) === 2)) );
+    wire [15:0]wb_mem_bank_3_wen = (wb_is_vst || (wb_is_st && ((wb_ra_val[15:1] % 4) === 3)) );
 
     wire[3:0] first_write = (wb_ra_val[15:1] % 4);
 
     //stores mem at addreessees 0, 4, 8, 12  
-    wire wb_mem_bank_wdata_04 = wb_stall_state === 0 ? wb_vec_reg[255:240] :
+    wire [15:0]wb_mem_bank_wdata_04 = wb_stall_state === 0 ? wb_vec_reg[255:240] :
                                 wb_stall_state === 1 ?  wb_vec_reg[191:176] : 
                                 wb_stall_state === 2 ? wb_vec_reg[127:112] :
                                 wb_stall_state === 3 ?  wb_vec_reg[63:48] : 0;
     //1, 5, 9, 13  
-    wire wb_mem_bank_wdata_15 = wb_stall_state === 0 ? wb_vec_reg[239:224] :
+    wire [15:0]wb_mem_bank_wdata_15 = wb_stall_state === 0 ? wb_vec_reg[239:224] :
                                 wb_stall_state === 1 ?  wb_vec_reg[175:160] :
                                 wb_stall_state === 2 ? wb_vec_reg[111:96] :
                                 wb_stall_state === 3 ?  wb_vec_reg[47:32] : 0;
     //2, 6, 10, 14
-    wire wb_mem_bank_wdata_26 = wb_stall_state === 0 ? wb_vec_reg[223:208] :
+    wire [15:0]wb_mem_bank_wdata_26 = wb_stall_state === 0 ? wb_vec_reg[223:208] :
                                 wb_stall_state === 1 ?  wb_vec_reg[159:144] :
                                 wb_stall_state === 2 ? wb_vec_reg[95:80] :
                                 wb_stall_state === 3 ?  wb_vec_reg[31:16] : 0;
     //3, 7, 11, 15
-    wire wb_mem_bank_wdata_37 = wb_stall_state === 0 ? wb_vec_reg[207:192] :
+    wire [15:0]wb_mem_bank_wdata_37 = wb_stall_state === 0 ? wb_vec_reg[207:192] :
                                 wb_stall_state === 1 ?  wb_vec_reg[143:128] :
                                 wb_stall_state === 2 ? wb_vec_reg[79:64] :
                                 wb_stall_state === 3 ?  wb_vec_reg[15:0] : 0;
 
     //not right
     //wb_ra_val + 4*stall_state
-    wire wb_mem_bank_waddr_0 = first_write === 0 ? (wb_ra_val + 4 * wb_stall_state) :
+    wire [15:0]wb_mem_bank_waddr_0 = first_write === 0 ? (wb_ra_val + 4 * wb_stall_state) :
                                 first_write === 1 ? (wb_ra_val + 4 * wb_stall_state) + 3 :
                                 first_write === 2 ? (wb_ra_val + 4 * wb_stall_state) + 2 :
                                 first_write === 3 ? (wb_ra_val + 4 * wb_stall_state) + 1: 0;
 
-    wire wb_mem_bank_waddr_1 = first_write === 0 ? (wb_ra_val + 4 * wb_stall_state) + 1:
+    wire [15:0]wb_mem_bank_waddr_1 = first_write === 0 ? (wb_ra_val + 4 * wb_stall_state) + 1:
                                 first_write === 1 ? (wb_ra_val + 4 * wb_stall_state) + 0 :
                                 first_write === 2 ? (wb_ra_val + 4 * wb_stall_state) + 3 :
                                 first_write === 3 ? (wb_ra_val + 4 * wb_stall_state) + 2: 0;
 
-    wire wb_mem_bank_waddr_2 = first_write === 0 ? (wb_ra_val + 4 * wb_stall_state) + 2:
+    wire [15:0]wb_mem_bank_waddr_2 = first_write === 0 ? (wb_ra_val + 4 * wb_stall_state) + 2:
                                 first_write === 1 ? (wb_ra_val + 4 * wb_stall_state) + 1 :
                                 first_write === 2 ? (wb_ra_val + 4 * wb_stall_state) + 0 :
                                 first_write === 3 ? (wb_ra_val + 4 * wb_stall_state) + 3: 0;
 
-    wire wb_mem_bank_waddr_3 = first_write === 0 ? (wb_ra_val + 4 * wb_stall_state) + 3:
+    wire [15:0]wb_mem_bank_waddr_3 = first_write === 0 ? (wb_ra_val + 4 * wb_stall_state) + 3:
                                 first_write === 1 ? (wb_ra_val + 4 * wb_stall_state) + 2 :
                                 first_write === 2 ? (wb_ra_val + 4 * wb_stall_state) + 1 :
                                 first_write === 3 ? (wb_ra_val + 4 * wb_stall_state) + 0: 0;
 
     //choose based on first store
-    wire wb_mem_bank_wdata_0 = wb_stall_state === 0 ? wb_mem_bank_wdata_04 :
+    wire [15:0]wb_mem_bank_wdata_0 = wb_stall_state === 0 ? wb_mem_bank_wdata_04 :
                                 wb_stall_state === 1 ?  wb_mem_bank_wdata_37 : 
                                 wb_stall_state === 2 ? wb_mem_bank_wdata_26 :
                                 wb_stall_state === 3 ?  wb_mem_bank_wdata_15 : 0;
 
-    wire wb_mem_bank_wdata_1 = wb_stall_state === 0 ? wb_mem_bank_wdata_15 :
+    wire [15:0]wb_mem_bank_wdata_1 = wb_stall_state === 0 ? wb_mem_bank_wdata_15 :
                                 wb_stall_state === 1 ?  wb_mem_bank_wdata_04 : 
                                 wb_stall_state === 2 ? wb_mem_bank_wdata_37 :
                                 wb_stall_state === 3 ?  wb_mem_bank_wdata_26 : 0;
 
-    wire wb_mem_bank_wdata_2 = wb_stall_state === 0 ? wb_mem_bank_wdata_26 :
+    wire [15:0]wb_mem_bank_wdata_2 = wb_stall_state === 0 ? wb_mem_bank_wdata_26 :
                                 wb_stall_state === 1 ?  wb_mem_bank_wdata_15 : 
                                 wb_stall_state === 2 ? wb_mem_bank_wdata_04 :
                                 wb_stall_state === 3 ?  wb_mem_bank_wdata_37 : 0;
 
-    wire wb_mem_bank_wdata_3 = wb_stall_state === 0 ? wb_mem_bank_wdata_37 :
+    wire [15:0]wb_mem_bank_wdata_3 = wb_stall_state === 0 ? wb_mem_bank_wdata_37 :
                                 wb_stall_state === 1 ?  wb_mem_bank_wdata_26 : 
                                 wb_stall_state === 2 ? wb_mem_bank_wdata_15 :
                                 wb_stall_state === 3 ?  wb_mem_bank_wdata_04 : 0;
 
-    reg[255:0] wb_vec_reg;
+    reg [255:0]wb_vec_reg;
     wire wb_vreg_mem_wen;
 
     assign mem_bank_0_wen = wb_mem_bank_0_wen;
@@ -834,6 +837,9 @@ module main();
     always @(posedge clk) begin
         wb_valid <= flush ? 0 : wb_stall ? wb_valid : c_valid && !c_stuck;
 
+        if(wb_stall_state == 0) wb_stall_state <= wb_stall ? wb_num_stall_cycles : 0;
+        else wb_stall_state <= wb_stall_state - 1;
+
         if (!wb_stall) begin
             wb_pc <= c_pc;
             wb_ins <= c_ins;
@@ -845,7 +851,7 @@ module main();
             wb_ra_val <= c_ra_val;
             wb_rx_val <= c_rx_val;
 
-            wb_vec_reg <= {c_temp_vector_0, c_temp_vector_1, c_temp_vector_2, 
+            wb_vec_reg <= c_is_vst ? c_vrx_val : {c_temp_vector_0, c_temp_vector_1, c_temp_vector_2, 
                             c_temp_vector_3, c_temp_vector_4, c_temp_vector_5, 
                             c_temp_vector_6, c_temp_vector_7, c_temp_vector_8, 
                             c_temp_vector_9, c_temp_vector_10, c_temp_vector_11, 

@@ -7,8 +7,8 @@ module counter(input isHalt, input clk);
             $fdisplay(32'h8000_0002,"%d\n",count);
             $finish;
         end
-        if (count == 300) begin
-            $display("ran for 300 cycles");
+        if (count == 1000) begin
+            $display("ran for 1000 cycles");
             $finish;
         end
         count <= count + 1;

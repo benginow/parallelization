@@ -5,7 +5,7 @@
 4011 //movl r1, $1 (val stored)
 4002 //movl r2, $0 (address)
 4023 //movl r3, $2 (increment for addresses)
-4104 //movl r4, $4 (loop counter)
+4104 //movl r4, $16 (loop counter)
 4015 //movl r5, $1 (decrement for loop counter)
 4108// movl r8, $16 (destination for jump)
 6010 //no-op
