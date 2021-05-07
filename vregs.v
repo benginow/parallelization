@@ -33,4 +33,39 @@ module vregs(input clk,
         end
     end
 
+    //WIRES FOR DEBUGGING PURPOSES
+    wire[255:0]vreg0 = data[0];
+    wire[255:0]vreg1 = data[1];
+    wire[255:0]vreg2 = data[2];
+    wire[255:0]vreg3 = data[3];
+    wire[255:0]vreg4 = data[4];
+    wire[255:0]vreg5 = data[5];
+    wire[255:0]vreg6 = data[6];
+    wire[255:0]vreg7 = data[7];
+    wire[255:0]vreg8 = data[8];
+    wire[255:0]vreg9 = data[9];
+    wire[255:0]vreg10 = data[10];
+    wire[255:0]vreg11 = data[11];
+    wire[255:0]vreg12 = data[12];
+    wire[255:0]vreg13 = data[13];
+    wire[255:0]vreg14 = data[14];
+    wire[255:0]vreg15 = data[15];
+
+    wire[3:0]vreg0_len = dataLen[0];
+    wire[3:0]vreg1_len = dataLen[1];
+    wire[3:0]vreg2_len = dataLen[2];
+    wire[3:0]vreg3_len = dataLen[3];
+    wire[3:0]vreg4_len = dataLen[4];
+    wire[3:0]vreg5_len = dataLen[5];
+    wire[3:0]vreg6_len = dataLen[6];
+    wire[3:0]vreg7_len = dataLen[7];
+    wire[3:0]vreg8_len = dataLen[8];
+    wire[3:0]vreg9_len = dataLen[9];
+    wire[3:0]vreg10_len = dataLen[10];
+    wire[3:0]vreg11_len = dataLen[11];
+    wire[3:0]vreg12_len = dataLen[12];
+    wire[3:0]vreg13_len = dataLen[13];
+    wire[3:0]vreg14_len = dataLen[14];
+    wire[3:0]vreg15_len = dataLen[15];
+
 endmodule

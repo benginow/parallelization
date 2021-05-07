@@ -20,8 +20,8 @@
 6010 //no-op
 6418 //jnz r8, r4
 
-c003 //vld vr0, r0, 4 (3 is NOT a typo check ISA)
-c103 //vld vr1, r0, 4
+c030 //vld vr0, r0, 4 (3 is NOT a typo check ISA)
+c031 //vld vr1, r0, 4
 6010 //no-op
 6010 //no-op
 6010 //no-op

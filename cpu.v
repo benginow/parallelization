@@ -189,7 +189,7 @@ module main();
     wire[3:0] d_rt = d_ins[3:0];
 
     wire[3:0] d_rx = (d_is_add || d_is_sub || d_is_mul || d_is_div) ||
-            (d_is_vadd || d_is_vsub || d_is_vmul || d_is_vdiv) ?
+            (d_is_vadd || d_is_vsub || d_is_vmul || d_is_vdiv || d_is_vdot) ?
             d_rb : d_rt;
 
     assign reg_raddr0 = d_ra;
@@ -269,15 +269,15 @@ module main();
     reg[3:0] fr_stall_state = 0;
     //Num stall cycles needed is working size / 4 + 1 if there is remainder
     wire[2:0] fr_num_stall_cycles = !fr_is_vector_op ? 0 :  
-                        fr_vr_working_size << 2 + fr_vr_working_size[1] || fr_vr_working_size[0];
-    wire fr_stuck = fr_stall_state != 0 && fr_num_stall_cycles != 0;
+                        (fr_vr_working_size << 2) + (fr_vr_working_size[1] || fr_vr_working_size[0]);
+    wire fr_stuck = fr_stall_state != 1 && fr_num_stall_cycles != 0;
 
     wire[3:0] fr_ra = fr_ins[11:8]; //always needed
     wire[3:0] fr_rb = fr_ins[7:4];
     wire[3:0] fr_rt = fr_ins[3:0];
     //second register whose value is needed may be either rb or rt
     wire[3:0] fr_rx = ((fr_is_add || fr_is_sub || fr_is_mul || fr_is_div) ||
-            (fr_is_vadd || fr_is_vsub || fr_is_vmul || fr_is_vdiv)) ?
+            (fr_is_vadd || fr_is_vsub || fr_is_vmul || fr_is_vdiv || fr_is_vdot)) ?
             fr_rb : fr_rt;
 
     wire[15:0] fr_ra_val = (fr_ra == 0) ? 0 : reg_data0;
@@ -292,14 +292,17 @@ module main();
     wire [15:0] fr_mem_0_request = !fr_is_vector_op ? fr_ra_val : fr_ra_val + 8 * fr_stall_state;
     wire [15:0] fr_mem_1_request = !fr_is_vector_op ? fr_ra_val : fr_mem_0_request + 2;
     wire [15:0] fr_mem_2_request = !fr_is_vector_op ? fr_ra_val : fr_mem_0_request + 4;
-    wire [15:0] fr_mem_3_request = !fr_is_vector_op ? fr_ra_val : fr_mem_0_request + 8;
+    wire [15:0] fr_mem_3_request = !fr_is_vector_op ? fr_ra_val : fr_mem_0_request + 6;
 
 
     always @(posedge clk) begin
         fr_valid <= flush ? 0 : fr_stall ? fr_valid : d_valid && !d_stuck;
 
-        fr_stall_state <= (fr_is_vector_op && fr_valid && fr_stall_state === 0) ? fr_num_stall_cycles - 1 :
-                           (fr_is_vector_op && fr_valid) ? fr_stall_state - 1 : 0;
+        // fr_stall_state <= (fr_valid && fr_is_vector_op && fr_stall_state == 0) ? fr_num_stall_cycles - 1 :
+        //                    (fr_is_vector_op && fr_valid) ? fr_stall_state - 1 : 0;
+
+        if(fr_stall_state == 0) fr_stall_state <= fr_stall ? fr_num_stall_cycles : 0;
+        else fr_stall_state <= fr_stall_state - 1;
 
         if (!fr_stall) begin
             fr_valid <= d_valid && !flush;
@@ -546,7 +549,6 @@ module main();
     //Note: this working size is only for calculating vdot so it doesn't worry about vmem sizes
     wire[4:0] c_vra_real_size = c_vra_size + 4'h1;
     wire[4:0] c_vrx_real_size = c_vrx_size + 4'h1;
-    wire[4:0] c_vr_working_size = (c_vra_size < c_vrx_size) ? c_vra_size : c_vrx_size;
     //TODO THIS VDOT STUFF IS SUPER NOT FINISHED IT DOESN'T MEANT ANYTHING YET
 
     always @(posedge clk) begin
@@ -554,23 +556,23 @@ module main();
 
         if (!c_stall) begin
             c_temp_vector_0 <= c_stall_state === 0 ? c_pipe_0_result : c_temp_vector_0;
-            c_temp_vector_4 <= c_stall_state === 0 ? c_pipe_1_result : c_temp_vector_4;
-            c_temp_vector_8 <= c_stall_state === 0 ? c_pipe_2_result : c_temp_vector_8;
-            c_temp_vector_12 <= c_stall_state === 0 ? c_pipe_3_result : c_temp_vector_12;
+            c_temp_vector_1 <= c_stall_state === 0 ? c_pipe_1_result : c_temp_vector_1;
+            c_temp_vector_2 <= c_stall_state === 0 ? c_pipe_2_result : c_temp_vector_2;
+            c_temp_vector_3 <= c_stall_state === 0 ? c_pipe_3_result : c_temp_vector_3;
 
-            c_temp_vector_1 <= c_stall_state === 1 ? c_pipe_0_result : c_temp_vector_1;
+            c_temp_vector_4 <= c_stall_state === 1 ? c_pipe_0_result : c_temp_vector_4;
             c_temp_vector_5 <= c_stall_state === 1 ? c_pipe_1_result : c_temp_vector_5;
-            c_temp_vector_9 <= c_stall_state === 1 ? c_pipe_2_result : c_temp_vector_9;
-            c_temp_vector_13 <= c_stall_state === 1 ? c_pipe_3_result : c_temp_vector_13;
+            c_temp_vector_6 <= c_stall_state === 1 ? c_pipe_2_result : c_temp_vector_6;
+            c_temp_vector_7 <= c_stall_state === 1 ? c_pipe_3_result : c_temp_vector_7;
 
-            c_temp_vector_2 <= c_stall_state === 2 ? c_pipe_0_result : c_temp_vector_2;
-            c_temp_vector_6 <= c_stall_state === 2 ? c_pipe_1_result : c_temp_vector_6;
+            c_temp_vector_8 <= c_stall_state === 2 ? c_pipe_0_result : c_temp_vector_8;
+            c_temp_vector_9 <= c_stall_state === 2 ? c_pipe_1_result : c_temp_vector_9;
             c_temp_vector_10 <= c_stall_state === 2 ? c_pipe_2_result : c_temp_vector_10;
-            c_temp_vector_14 <= c_stall_state === 2 ? c_pipe_3_result : c_temp_vector_14;
+            c_temp_vector_11 <= c_stall_state === 2 ? c_pipe_3_result : c_temp_vector_11;
 
-            c_temp_vector_3 <= c_stall_state === 3 ? c_pipe_0_result : c_temp_vector_3;
-            c_temp_vector_7 <= c_stall_state === 3 ? c_pipe_1_result : c_temp_vector_7;
-            c_temp_vector_11 <= c_stall_state === 3 ? c_pipe_2_result : c_temp_vector_11;
+            c_temp_vector_12 <= c_stall_state === 3 ? c_pipe_0_result : c_temp_vector_12;
+            c_temp_vector_13 <= c_stall_state === 3 ? c_pipe_1_result : c_temp_vector_13;
+            c_temp_vector_14 <= c_stall_state === 3 ? c_pipe_2_result : c_temp_vector_14;
             c_temp_vector_15 <= c_stall_state === 3 ? c_pipe_3_result : c_temp_vector_15;
 
             c_pc <= x2_pc;
@@ -678,6 +680,7 @@ module main();
     wire wb_writes_vreg = (wb_is_vadd || wb_is_vsub || wb_is_vmul || wb_is_vdiv || wb_is_vld);
     assign vreg_wen = wb_valid && wb_writes_vreg && wb_rt != 0;
     assign vreg_wdata = wb_vec_reg;
+    assign vreg_wlen = wb_vr_working_size - 1;
     assign vreg_waddr = wb_rt;
 
     //WE NEED TO FORWARD THESE BADD BOYS
@@ -686,9 +689,10 @@ module main();
     reg[4:0] wb_vr_working_size;
 
     reg[3:0] wb_stall_state = 0;
-    wire[2:0] wb_num_stall_cycles = wb_is_vector_op ? wb_vra_size << 2 + wb_vra_size[1:0] : 0;
-    //If I don't add the wb_is_ld it is true on loads
-    wire wb_stall = wb_valid && ((wb_stall_state === 1) || (wb_stall_state !== 0) || (wb_num_stall_cycles !== 0));
+    wire[2:0] wb_num_stall_cycles = !wb_is_vector_op ? 0 : 
+            (wb_vr_working_size << 2) + (wb_vr_working_size[1] || wb_vr_working_size[0]);
+    wire wb_stall = wb_valid && wb_stuck;
+    wire wb_stuck = wb_stall_state !=1 && wb_num_stall_cycles != 0;
 
     // reg[3:0] wb_stall_cycle <= wb_is_vst ? wb_
     // wire wb_stall = wb_is_vst;

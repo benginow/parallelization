@@ -19,4 +19,10 @@ module mem(input clk,
         end
     end
 
+    //WIRES FOR DEBUGGING PURPOSES
+    wire [15:0]data00 = data[0];
+    wire [15:0]data02 = data[1];
+    wire [15:0]data04 = data[2];
+    wire [15:0]data06 = data[3];
+
 endmodule
