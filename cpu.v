@@ -48,7 +48,6 @@ module main();
     //instr mem - 2 clock latency
     wire [15:0]instr_mem_raddr;
     wire [15:0]instr_mem_data;
-    assign instr_mem_raddr = f1_pc;
     instr_mem instr_bank(clk,
         instr_mem_raddr[15:1], instr_mem_data);
 
@@ -125,6 +124,9 @@ module main();
     wire f2_stall = f2_valid && f2_stuck || d_valid && d_stall;
     wire f2_stuck = 0;
 
+    //when stalling don't let MAR get ahead
+    assign instr_mem_raddr = f2_stall ? f2_pc : f1_pc;
+
     always @(posedge clk) begin
         //valid bit needs to give flush precedence over stall
         f2_valid <= flush ? 0 : f2_stall ? f2_valid : f1_valid && !f1_stuck;
@@ -141,13 +143,13 @@ module main();
     reg d_valid = 0;
     wire d_stall = d_valid && d_stuck || fr_valid && fr_stall;
     wire d_stuck = 0;
+    reg[15:0] d_last_ins;
+    reg d_stall_cycle = 0; //true if d received stall signal in last cycle 
     
     //newly gathered information
-    wire[15:0] d_ins = instr_mem_data;
+    wire[15:0] d_ins = d_stall_cycle ? d_last_ins : instr_mem_data;
     wire[3:0] d_opcode = d_ins[15:12];
     wire[3:0] d_subcode = d_ins[7:4];
-
-    reg[15:0] d_last_ins;
 
     wire d_is_add = d_opcode == 4'b0000;
     wire d_is_sub = d_opcode == 4'b0001;
@@ -192,20 +194,20 @@ module main();
             (d_is_vadd || d_is_vsub || d_is_vmul || d_is_vdiv || d_is_vdot) ?
             d_rb : d_rt;
 
-    assign reg_raddr0 = d_ra;
-    assign reg_raddr1 = d_rx;
-    assign vreg_raddr0 = d_ra;
-    assign vreg_raddr1 = d_rx;
+    //ensure old registers are still pushed for reading if fr will stall
+    assign reg_raddr0 = fr_stall ? fr_ra : d_ra;
+    assign reg_raddr1 = fr_stall ? fr_ra : d_rx;
+    assign vreg_raddr0 = fr_stall ? fr_ra : d_ra;
+    assign vreg_raddr1 = fr_stall ? fr_ra : d_rx;
 
     always @(posedge clk) begin
         d_valid <= flush ? 0 : d_stall ? d_valid : f2_valid && !f2_stuck;
         //if we're stalling, we don't want to percolate any vals down
         if (!d_stall) begin
             d_pc <= f2_pc;
-            //if we aren't flushing, and if the previous isn't valid
-            d_valid <= f2_valid && !flush;
-            d_last_ins <= d_ins;
         end
+        d_last_ins <= d_stall_cycle ? d_last_ins : instr_mem_data;
+        d_stall_cycle <= d_stall; 
     end
 
     //==========================FETCH REGS==========================
