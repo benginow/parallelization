@@ -514,10 +514,10 @@ module main();
     wire c_stuck = 0;
 
     reg[15:0] c_scalar_output;
-    reg[15:0] c_pipe_0_result;
-    reg[15:0] c_pipe_1_result;
-    reg[15:0] c_pipe_2_result;
-    reg[15:0] c_pipe_3_result;
+    // reg[15:0] c_pipe_0_result;
+    // reg[15:0] c_pipe_1_result;
+    // reg[15:0] c_pipe_2_result;
+    // reg[15:0] c_pipe_3_result;
 
     wire c_is_vector_op;
 
@@ -554,26 +554,28 @@ module main();
     always @(posedge clk) begin
         c_valid <= flush ? 0 : c_stall ? c_valid : x2_valid && !x2_stuck;
 
+        //C does a lot of its assignments based on x2 because they need to be ready 
+        // by the next clock cycle, not 2 cycles after
         if (!c_stall) begin
-            c_temp_vector_0 <= c_stall_state === 0 ? c_pipe_0_result : c_temp_vector_0;
-            c_temp_vector_1 <= c_stall_state === 0 ? c_pipe_1_result : c_temp_vector_1;
-            c_temp_vector_2 <= c_stall_state === 0 ? c_pipe_2_result : c_temp_vector_2;
-            c_temp_vector_3 <= c_stall_state === 0 ? c_pipe_3_result : c_temp_vector_3;
+            c_temp_vector_0 <= x2_stall_state === 0 ? x2_pipe_0_result : c_temp_vector_0;
+            c_temp_vector_1 <= x2_stall_state === 0 ? x2_pipe_1_result : c_temp_vector_1;
+            c_temp_vector_2 <= x2_stall_state === 0 ? x2_pipe_2_result : c_temp_vector_2;
+            c_temp_vector_3 <= x2_stall_state === 0 ? x2_pipe_3_result : c_temp_vector_3;
 
-            c_temp_vector_4 <= c_stall_state === 1 ? c_pipe_0_result : c_temp_vector_4;
-            c_temp_vector_5 <= c_stall_state === 1 ? c_pipe_1_result : c_temp_vector_5;
-            c_temp_vector_6 <= c_stall_state === 1 ? c_pipe_2_result : c_temp_vector_6;
-            c_temp_vector_7 <= c_stall_state === 1 ? c_pipe_3_result : c_temp_vector_7;
+            c_temp_vector_4 <= x2_stall_state === 1 ? x2_pipe_0_result : c_temp_vector_4;
+            c_temp_vector_5 <= x2_stall_state === 1 ? x2_pipe_1_result : c_temp_vector_5;
+            c_temp_vector_6 <= x2_stall_state === 1 ? x2_pipe_2_result : c_temp_vector_6;
+            c_temp_vector_7 <= x2_stall_state === 1 ? x2_pipe_3_result : c_temp_vector_7;
 
-            c_temp_vector_8 <= c_stall_state === 2 ? c_pipe_0_result : c_temp_vector_8;
-            c_temp_vector_9 <= c_stall_state === 2 ? c_pipe_1_result : c_temp_vector_9;
-            c_temp_vector_10 <= c_stall_state === 2 ? c_pipe_2_result : c_temp_vector_10;
-            c_temp_vector_11 <= c_stall_state === 2 ? c_pipe_3_result : c_temp_vector_11;
+            c_temp_vector_8 <= x2_stall_state === 2 ? x2_pipe_0_result : c_temp_vector_8;
+            c_temp_vector_9 <= x2_stall_state === 2 ? x2_pipe_1_result : c_temp_vector_9;
+            c_temp_vector_10 <= x2_stall_state === 2 ? x2_pipe_2_result : c_temp_vector_10;
+            c_temp_vector_11 <= x2_stall_state === 2 ? x2_pipe_3_result : c_temp_vector_11;
 
-            c_temp_vector_12 <= c_stall_state === 3 ? c_pipe_0_result : c_temp_vector_12;
-            c_temp_vector_13 <= c_stall_state === 3 ? c_pipe_1_result : c_temp_vector_13;
-            c_temp_vector_14 <= c_stall_state === 3 ? c_pipe_2_result : c_temp_vector_14;
-            c_temp_vector_15 <= c_stall_state === 3 ? c_pipe_3_result : c_temp_vector_15;
+            c_temp_vector_12 <= x2_stall_state === 3 ? x2_pipe_0_result : c_temp_vector_12;
+            c_temp_vector_13 <= x2_stall_state === 3 ? x2_pipe_1_result : c_temp_vector_13;
+            c_temp_vector_14 <= x2_stall_state === 3 ? x2_pipe_2_result : c_temp_vector_14;
+            c_temp_vector_15 <= x2_stall_state === 3 ? x2_pipe_3_result : c_temp_vector_15;
 
             c_pc <= x2_pc;
             c_ins <= x2_ins;
@@ -584,10 +586,10 @@ module main();
             c_stall_state <= x2_stall_state;
 
             c_scalar_output <= x2_pipe_0_result;
-            c_pipe_0_result <= x2_pipe_0_result;
-            c_pipe_1_result <= x2_pipe_1_result;
-            c_pipe_2_result <= x2_pipe_2_result;
-            c_pipe_3_result <= x2_pipe_3_result;
+            // c_pipe_0_result <= x2_pipe_0_result;
+            // c_pipe_1_result <= x2_pipe_1_result;
+            // c_pipe_2_result <= x2_pipe_2_result;
+            // c_pipe_3_result <= x2_pipe_3_result;
 
             c_vra_size <= x2_vra_size;
             c_vrx_size <= x2_vrx_size;
@@ -678,7 +680,7 @@ module main();
         WRITING TO VREG
     */
     wire wb_writes_vreg = (wb_is_vadd || wb_is_vsub || wb_is_vmul || wb_is_vdiv || wb_is_vld);
-    assign vreg_wen = wb_valid && wb_writes_vreg && wb_rt != 0;
+    assign vreg_wen = wb_valid && wb_writes_vreg;
     assign vreg_wdata = wb_vec_reg;
     assign vreg_wlen = wb_vr_working_size - 1;
     assign vreg_waddr = wb_rt;
