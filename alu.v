@@ -50,7 +50,8 @@ module alu(input clk, input[15:0]fr_pc, input[15:0]fr_ins,
 
     wire x_is_vld = x_opcode == 4'b1100;
     wire x_is_vst = x_opcode == 4'b1101;
-    //nothing output for vdot since coalesce handles this
+
+    wire x_is_vdot = x_opcode == 4'b1110; //treated like vmul
 
     //yo who added this wire it doesn't even connect to anything
     //wire is_St = (x2_opcode === 4'b0111) && (x2_ins[7:4] === 4'b0001);
@@ -68,7 +69,7 @@ module alu(input clk, input[15:0]fr_pc, input[15:0]fr_ins,
 
     wire[15:0] x_result = (x_is_div || x_is_vdiv) ?  x_operand_1 / x_operand_2 :
                         (x_is_sub || x_is_vsub) ? x_operand_1 - x_operand_2 :
-                        (x_is_mul || x_is_vmul) ? x_operand_1 * x_operand_2 : 
+                        (x_is_mul || x_is_vmul || x_is_vdot) ? x_operand_1 * x_operand_2 : 
                         (x_is_add || x_is_vadd) ? x_operand_1 + x_operand_2 : 
                         (x_is_jz) ? (x_operand_1 == 0 ? x_operand_2 : x_pc+2) :
                         (x_is_jnz) ? (x_operand_1 != 0 ? x_operand_2 : x_pc+2) :
@@ -81,11 +82,6 @@ module alu(input clk, input[15:0]fr_pc, input[15:0]fr_ins,
 
         // MOVL: x_is_movl? (stall_stage_2[11] ? 16'hff00 | stall_stage_2[11:4] : stall_stage_2[11:4]): 
         //MOVH: x_is_movh? (stall_stage_2_val_1 & 16'h00ff) | (stall_stage_2[11:4] << 8):
-
-    // wire x_take_jump =  (x_is_jz) ? (x_operand_1 == 0 ? 1 :0):
-    //                     (x_is_jnz) ? (x_operand_1 != 0 ? 1 : 0):
-    //                     (x_is_js) ? (x_operand_1[15] ? 1 : 0):
-    //                     (x_is_jns) ? (!x_operand_1[15] ? 1 : 0):0;
     
     always @(posedge clk) begin
         x_pc <= fr_pc;

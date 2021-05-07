@@ -195,7 +195,7 @@ module main();
     assign reg_raddr0 = d_ra;
     assign reg_raddr1 = d_rx;
     assign vreg_raddr0 = d_ra;
-    assign vreg_raddr0 = d_ra;
+    assign vreg_raddr1 = d_rx;
 
     always @(posedge clk) begin
         d_valid <= flush ? 0 : d_stall ? d_valid : f2_valid && !f2_stuck;
@@ -513,13 +513,10 @@ module main();
     wire c_stall = c_valid && c_stuck || wb_valid && wb_stall;
     wire c_stuck = 0;
 
-    reg[15:0] c_scalar_output;
-    // reg[15:0] c_pipe_0_result;
-    // reg[15:0] c_pipe_1_result;
-    // reg[15:0] c_pipe_2_result;
-    // reg[15:0] c_pipe_3_result;
+    wire c_is_vdot = c_opcode == 4'b1110;
 
-    wire c_is_vector_op;
+    reg[15:0] c_pipe_0_result; //non-vdot outputs for scalar registers
+    wire[15:0] c_scalar_output = c_is_vdot ? c_vdot_result : c_pipe_0_result;
 
     reg[15:0] c_temp_vector_0;
     reg[15:0] c_temp_vector_1;
@@ -544,12 +541,48 @@ module main();
     reg[4:0] c_vr_working_size;
 
     //VDOT calculation stuff
-    reg[15:0] c_vdot_result;
-    reg[4:0] c_vdot_entries_left;
-    //Note: this working size is only for calculating vdot so it doesn't worry about vmem sizes
-    wire[4:0] c_vra_real_size = c_vra_size + 4'h1;
-    wire[4:0] c_vrx_real_size = c_vrx_size + 4'h1;
-    //TODO THIS VDOT STUFF IS SUPER NOT FINISHED IT DOESN'T MEANT ANYTHING YET
+    //This is not the most efficient implementation but it will work for now
+    //TODO make this better plz (use an accumulated sum register)
+    wire [15:0] c_vdot_result = c_vr_working_size == 1 ? c_temp_vector_0 :
+        c_vr_working_size == 2 ? c_temp_vector_0 + c_temp_vector_1 :
+        c_vr_working_size == 3 ? c_temp_vector_0 + c_temp_vector_1 + c_temp_vector_2 :
+        c_vr_working_size == 4 ? c_temp_vector_0 + c_temp_vector_1 + c_temp_vector_2 + c_temp_vector_3 :
+        c_vr_working_size == 5 ? c_temp_vector_0 + c_temp_vector_1 + c_temp_vector_2 + c_temp_vector_3 
+                                + c_temp_vector_4 :
+        c_vr_working_size == 6 ? c_temp_vector_0 + c_temp_vector_1 + c_temp_vector_2 + c_temp_vector_3 
+                                + c_temp_vector_4 + c_temp_vector_5 :
+        c_vr_working_size == 7 ? c_temp_vector_0 + c_temp_vector_1 + c_temp_vector_2 + c_temp_vector_3 
+                                + c_temp_vector_4 + c_temp_vector_5 + c_temp_vector_6 :
+        c_vr_working_size == 8 ? c_temp_vector_0 + c_temp_vector_1 + c_temp_vector_2 + c_temp_vector_3 
+                                + c_temp_vector_4 + c_temp_vector_5 + c_temp_vector_6 + c_temp_vector_7 :
+        c_vr_working_size == 9 ? c_temp_vector_0 + c_temp_vector_1 + c_temp_vector_2 + c_temp_vector_3 
+                                + c_temp_vector_4 + c_temp_vector_5 + c_temp_vector_6 + c_temp_vector_7 
+                                + c_temp_vector_8 :
+        c_vr_working_size == 10 ? c_temp_vector_0 + c_temp_vector_1 + c_temp_vector_2 + c_temp_vector_3 
+                                + c_temp_vector_4 + c_temp_vector_5 + c_temp_vector_6 + c_temp_vector_7 
+                                + c_temp_vector_8 + c_temp_vector_9 :
+        c_vr_working_size == 11 ? c_temp_vector_0 + c_temp_vector_1 + c_temp_vector_2 + c_temp_vector_3 
+                                + c_temp_vector_4 + c_temp_vector_5 + c_temp_vector_6 + c_temp_vector_7 
+                                + c_temp_vector_8 + c_temp_vector_9 + c_temp_vector_10 :
+        c_vr_working_size == 12 ? c_temp_vector_0 + c_temp_vector_1 + c_temp_vector_2 + c_temp_vector_3 
+                                + c_temp_vector_4 + c_temp_vector_5 + c_temp_vector_6 + c_temp_vector_7 
+                                + c_temp_vector_8 + c_temp_vector_9 + c_temp_vector_10 + c_temp_vector_11 :
+        c_vr_working_size == 13 ? c_temp_vector_0 + c_temp_vector_1 + c_temp_vector_2 + c_temp_vector_3 
+                                + c_temp_vector_4 + c_temp_vector_5 + c_temp_vector_6 + c_temp_vector_7 
+                                + c_temp_vector_8 + c_temp_vector_9 + c_temp_vector_10 + c_temp_vector_11 
+                                + c_temp_vector_12 :
+        c_vr_working_size == 14 ? c_temp_vector_0 + c_temp_vector_1 + c_temp_vector_2 + c_temp_vector_3 
+                                + c_temp_vector_4 + c_temp_vector_5 + c_temp_vector_6 + c_temp_vector_7 
+                                + c_temp_vector_8 + c_temp_vector_9 + c_temp_vector_10 + c_temp_vector_11 
+                                + c_temp_vector_12 + c_temp_vector_13 :
+        c_vr_working_size == 15 ? c_temp_vector_0 + c_temp_vector_1 + c_temp_vector_2 + c_temp_vector_3 
+                                + c_temp_vector_4 + c_temp_vector_5 + c_temp_vector_6 + c_temp_vector_7 
+                                + c_temp_vector_8 + c_temp_vector_9 + c_temp_vector_10 + c_temp_vector_11 
+                                + c_temp_vector_12 + c_temp_vector_13 + c_temp_vector_14 :
+        c_vr_working_size == 16 ? c_temp_vector_0 + c_temp_vector_1 + c_temp_vector_2 + c_temp_vector_3 
+                                + c_temp_vector_4 + c_temp_vector_5 + c_temp_vector_6 + c_temp_vector_7 
+                                + c_temp_vector_8 + c_temp_vector_9 + c_temp_vector_10 + c_temp_vector_11 
+                                + c_temp_vector_12 + c_temp_vector_13 + c_temp_vector_14 + c_temp_vector_15 : 0;
 
     always @(posedge clk) begin
         c_valid <= flush ? 0 : c_stall ? c_valid : x2_valid && !x2_stuck;
@@ -585,11 +618,7 @@ module main();
 
             c_stall_state <= x2_stall_state;
 
-            c_scalar_output <= x2_pipe_0_result;
-            // c_pipe_0_result <= x2_pipe_0_result;
-            // c_pipe_1_result <= x2_pipe_1_result;
-            // c_pipe_2_result <= x2_pipe_2_result;
-            // c_pipe_3_result <= x2_pipe_3_result;
+            c_pipe_0_result <= x2_pipe_0_result;
 
             c_vra_size <= x2_vra_size;
             c_vrx_size <= x2_vrx_size;

@@ -9,16 +9,18 @@
     - 1 write port allows writing one entry of a vector register
 */
 
-//fart
 //this should take one clock cycle
 module vregs(input clk, 
-    input [3:0]rAddr0, output [255:0]rData0, output[3:0] r_len0,
-    input [3:0]rAddr1, output [255:0]rData1, output[3:0] r_len1,
+    input [3:0]rAddr0_, output [255:0]rData0, output[3:0] r_len0,
+    input [3:0]rAddr1_, output [255:0]rData1, output[3:0] r_len1,
     input wEn, input [3:0]wAddr, input[3:0]wLen, input[255:0]wData);
 
     //we can store 16 8x8 matrices
     reg [255:0]data[0:15];
     reg [3:0]dataLen[0:15];
+
+    reg[3:0]rAddr0;
+    reg[3:0]rAddr1;
 
     assign rData0 = data[rAddr0];
     assign rData1 = data[rAddr1];
@@ -27,6 +29,8 @@ module vregs(input clk,
     assign r_len1 = dataLen[rAddr1];
 
     always @(posedge clk) begin
+        rAddr0 <= rAddr0_;
+        rAddr1 <= rAddr1_;
         if (wEn) begin
             data[wAddr] <= wData;
             dataLen[wAddr] <= wLen;
