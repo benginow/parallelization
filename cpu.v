@@ -316,10 +316,6 @@ module main();
             fr_valid <= d_valid && !flush;
             fr_pc <= d_pc;
             fr_ins <= d_ins;
-            //This is done as a wire
-            // fr_is_vector_op <= d_is_vector_op;
-            // fr_ra <= d_ra;
-            // fr_rx <= d_rx;
         end
     end
 
@@ -695,11 +691,6 @@ module main();
     */
     assign flush = wb_valid ? wb_take_jump : 0;
     wire [15:0] wb_next_pc = wb_take_jump ? wb_scalar_output : wb_pc + 2;
-    //assign flush = wb_valid ? wb_next_pc !== c_pc : 0;
-    // wire wb_take_jump =  (wb_is_jz) ? (wb_ra_val === 0 ? 1 :0):
-    //                     (wb_is_jnz) ? (wb_ra_val !== 0 ? 1 : 0):
-    //                     (wb_is_js) ? (wb_ra_val[15] === 1 ? 1 : 0):
-    //                     (wb_is_jns) ? (wb_ra_val[15] === 0? 1 : 0) : 0;
 
     /*
         WRITING TO REG
@@ -736,14 +727,11 @@ module main();
     wire wb_stall = wb_valid && wb_stuck;
     wire wb_stuck = wb_stall_state != 1 && wb_num_stall_cycles != 0;
 
-    // reg[3:0] wb_stall_cycle <= wb_is_vst ? wb_
-    // wire wb_stall = wb_is_vst;
-    // wire wb_stuck;
     /*
         MEMORY
     */
     wire [15:1]test_wire = wb_ra_val[15:1] % 4;
-    wire [15:0]wb_mem_bank_0_wen  = (wb_is_vst || (wb_is_st && ((wb_ra_val[15:1] % 4) === 0)) );
+    wire [15:0]wb_mem_bank_0_wen = (wb_is_vst || (wb_is_st && ((wb_ra_val[15:1] % 4) === 0)) );
     wire [15:0]wb_mem_bank_1_wen = (wb_is_vst || (wb_is_st && ((wb_ra_val[15:1] % 4) === 1)) );
     wire [15:0]wb_mem_bank_2_wen = (wb_is_vst || (wb_is_st && ((wb_ra_val[15:1] % 4) === 2)) );
     wire [15:0]wb_mem_bank_3_wen = (wb_is_vst || (wb_is_st && ((wb_ra_val[15:1] % 4) === 3)) );
