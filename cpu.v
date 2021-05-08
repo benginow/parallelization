@@ -723,7 +723,7 @@ module main();
 
     reg[2:0] wb_stall_state = 0;
     wire[2:0] wb_num_stall_cycles = !wb_is_vst ? 0 : 
-            (wb_vr_working_size >> 2) + (wb_vr_working_size[1] || wb_vr_working_size[0]);
+            ((wb_vr_working_size - 5'h4)>> 2) + (wb_vr_working_size[1] || wb_vr_working_size[0]);
     wire wb_stall = wb_valid && wb_stuck;
     wire wb_stuck = wb_stall_state != 1 && wb_num_stall_cycles != 0;
 
@@ -761,46 +761,34 @@ module main();
 
     //not right
     //wb_ra_val + 4*stall_state
-    wire [15:0]wb_mem_bank_waddr_0 = first_write === 0 ? (wb_ra_val + 4 * wb_stall_state) :
-                                first_write === 1 ? (wb_ra_val + 4 * wb_stall_state) + 3 :
-                                first_write === 2 ? (wb_ra_val + 4 * wb_stall_state) + 2 :
-                                first_write === 3 ? (wb_ra_val + 4 * wb_stall_state) + 1: 0;
+    wire [15:0]wb_mem_bank_waddr_0 = first_write === 0 ? (wb_ra_val + 8 * wb_stall_state) :
+                                first_write === 1 ? (wb_ra_val + 8 * wb_stall_state) + 6 :
+                                first_write === 2 ? (wb_ra_val + 8 * wb_stall_state) + 4 :
+                                first_write === 3 ? (wb_ra_val + 8 * wb_stall_state) + 2: 0;
 
-    wire [15:0]wb_mem_bank_waddr_1 = first_write === 0 ? (wb_ra_val + 4 * wb_stall_state) + 1:
-                                first_write === 1 ? (wb_ra_val + 4 * wb_stall_state) + 0 :
-                                first_write === 2 ? (wb_ra_val + 4 * wb_stall_state) + 3 :
-                                first_write === 3 ? (wb_ra_val + 4 * wb_stall_state) + 2: 0;
+    wire [15:0]wb_mem_bank_waddr_1 = first_write === 0 ? (wb_ra_val + 8 * wb_stall_state) + 2:
+                                first_write === 1 ? (wb_ra_val + 8 * wb_stall_state) + 0 :
+                                first_write === 2 ? (wb_ra_val + 8 * wb_stall_state) + 6 :
+                                first_write === 3 ? (wb_ra_val + 8 * wb_stall_state) + 4: 0;
 
-    wire [15:0]wb_mem_bank_waddr_2 = first_write === 0 ? (wb_ra_val + 4 * wb_stall_state) + 2:
-                                first_write === 1 ? (wb_ra_val + 4 * wb_stall_state) + 1 :
-                                first_write === 2 ? (wb_ra_val + 4 * wb_stall_state) + 0 :
-                                first_write === 3 ? (wb_ra_val + 4 * wb_stall_state) + 3: 0;
+    wire [15:0]wb_mem_bank_waddr_2 = first_write === 0 ? (wb_ra_val + 8 * wb_stall_state) + 4:
+                                first_write === 1 ? (wb_ra_val + 8 * wb_stall_state) + 2 :
+                                first_write === 2 ? (wb_ra_val + 8 * wb_stall_state) + 0 :
+                                first_write === 3 ? (wb_ra_val + 8 * wb_stall_state) + 6: 0;
 
-    wire [15:0]wb_mem_bank_waddr_3 = first_write === 0 ? (wb_ra_val + 4 * wb_stall_state) + 3:
-                                first_write === 1 ? (wb_ra_val + 4 * wb_stall_state) + 2 :
-                                first_write === 2 ? (wb_ra_val + 4 * wb_stall_state) + 1 :
-                                first_write === 3 ? (wb_ra_val + 4 * wb_stall_state) + 0: 0;
+    wire [15:0]wb_mem_bank_waddr_3 = first_write === 0 ? (wb_ra_val + 8 * wb_stall_state) + 6:
+                                first_write === 1 ? (wb_ra_val + 8 * wb_stall_state) + 4 :
+                                first_write === 2 ? (wb_ra_val + 8 * wb_stall_state) + 2 :
+                                first_write === 3 ? (wb_ra_val + 8 * wb_stall_state) + 0: 0;
 
     //choose based on first store
-    wire [15:0]wb_mem_bank_wdata_0 = wb_stall_state === 0 ? wb_mem_bank_wdata_04 :
-                                wb_stall_state === 1 ?  wb_mem_bank_wdata_37 : 
-                                wb_stall_state === 2 ? wb_mem_bank_wdata_26 :
-                                wb_stall_state === 3 ?  wb_mem_bank_wdata_15 : 0;
+    wire [15:0]wb_mem_bank_wdata_0 = wb_mem_bank_wdata_04;
 
-    wire [15:0]wb_mem_bank_wdata_1 = wb_stall_state === 0 ? wb_mem_bank_wdata_15 :
-                                wb_stall_state === 1 ?  wb_mem_bank_wdata_04 : 
-                                wb_stall_state === 2 ? wb_mem_bank_wdata_37 :
-                                wb_stall_state === 3 ?  wb_mem_bank_wdata_26 : 0;
+    wire [15:0]wb_mem_bank_wdata_1 = wb_mem_bank_wdata_15;
 
-    wire [15:0]wb_mem_bank_wdata_2 = wb_stall_state === 0 ? wb_mem_bank_wdata_26 :
-                                wb_stall_state === 1 ?  wb_mem_bank_wdata_15 : 
-                                wb_stall_state === 2 ? wb_mem_bank_wdata_04 :
-                                wb_stall_state === 3 ?  wb_mem_bank_wdata_37 : 0;
+    wire [15:0]wb_mem_bank_wdata_2 = wb_mem_bank_wdata_26;
 
-    wire [15:0]wb_mem_bank_wdata_3 = wb_stall_state === 0 ? wb_mem_bank_wdata_37 :
-                                wb_stall_state === 1 ?  wb_mem_bank_wdata_26 : 
-                                wb_stall_state === 2 ? wb_mem_bank_wdata_15 :
-                                wb_stall_state === 3 ?  wb_mem_bank_wdata_04 : 0;
+    wire [15:0]wb_mem_bank_wdata_3 = wb_mem_bank_wdata_37;
 
     reg [255:0]wb_vec_reg;
     wire wb_vreg_mem_wen;
